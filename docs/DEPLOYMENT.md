@@ -21,10 +21,28 @@ npm run preview -w @mara/web
 
 ## Vercel
 
-1. Import the GitHub repository.
-2. Leave **Root Directory** empty (repo root). `vercel.json` sets:
-   - `buildCommand`: `npm run build:production`
-   - `outputDirectory`: `apps/web/dist`
+Use **one** of these setups (not both):
+
+**Option A — Root Directory `apps/web` (recommended on the import screen)**
+
+| Setting | Value |
+|--------|--------|
+| Root Directory | `apps/web` |
+| Framework | Vite |
+| Install Command | `cd ../.. && npm install` (or leave blank to use `apps/web/vercel.json`) |
+| Build Command | `npm run build:production` |
+| Output Directory | **`dist`** (not `apps/web/dist`) |
+| Environment variables | **None** — delete any `EXAMPLE_NAME` placeholder |
+
+**Option B — Repository root**
+
+| Setting | Value |
+|--------|--------|
+| Root Directory | empty |
+| Build Command | `npm run build:production` |
+| Output Directory | `apps/web/dist` |
+
+Root `vercel.json` applies to option B; `apps/web/vercel.json` applies to option A.
 3. **Environment variables** (Project → Settings → Environment Variables):
    - None required for current features.
    - Optional: `VITE_API_BASE_URL` = `https://your-api.example.com` (HTTPS only; localhost is ignored in production builds). See `apps/web/.env.example`.

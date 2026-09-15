@@ -9,6 +9,7 @@
     "feature-art": "node ./scripts/generate-feature-art.mjs",
     "prebuild": "npm run icons && npm run feature-art",
     "build": "tsc -b tsconfig.app.json && vite build",
+    "build:production": "npm run models && npm run build",
     "preview": "vite preview",
     "test": "vitest run",
     "models": "node ./scripts/download-models.mjs"
