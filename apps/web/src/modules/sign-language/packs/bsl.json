@@ -1,0 +1,7 @@
+{
+  "packId": "bsl",
+  "label": "BSL isolated signs",
+  "experimental": true,
+  "description": "Slot for a future BSL isolated-sign pack. No trained classifier in this build. Inclusive Tourism will not invent glosses.",
+  "vocabulary": []
+}

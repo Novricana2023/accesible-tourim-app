@@ -1,0 +1,15 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+.env.*
+!.env.example
+tsconfig.tsbuildinfo
+node_modules/.tmp
+public/models/*.onnx
+public/models/mediapipe/
+public/models/sign-language/
+public/ort/
+public/tesseract/
+public/mediapipe/

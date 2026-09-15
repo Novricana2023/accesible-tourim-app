@@ -1,0 +1,147 @@
+@import "tailwindcss";
+@import "@fontsource/atkinson-hyperlegible/400.css";
+@import "@fontsource/atkinson-hyperlegible/700.css";
+
+/*
+ * Inclusive Tourism design tokens — light accessibility product theme.
+ * See docs/DESIGN_TOKENS.md for semantics and contrast notes.
+ */
+@theme {
+  --font-sans: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: #f4f6f9;
+  --color-bg-subtle: #e8ecf2;
+  --color-fg: #0f172a;
+  --color-fg-muted: #334155;
+  --color-fg-subtle: #475569;
+
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  --color-surface-inset: #f8fafc;
+
+  --color-border: #cbd5e1;
+  --color-border-strong: #94a3b8;
+
+  --color-primary: #0c5c6e;
+  --color-primary-hover: #094656;
+  --color-primary-fg: #ffffff;
+  --color-primary-muted: #e0f2f6;
+
+  --color-accent: #2563eb;
+  --color-accent-muted: #eff6ff;
+
+  --color-success: #047857;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #6ee7b7;
+
+  --color-warning: #b45309;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fcd34d;
+
+  --color-danger: #b91c1c;
+  --color-danger-bg: #fef2f2;
+  --color-danger-border: #fca5a5;
+  --color-danger-fg: #ffffff;
+  --color-danger-hover: #991b1b;
+
+  --color-active: #0c5c6e;
+  --color-active-bg: #e0f2f6;
+
+  --color-focus: #2563eb;
+
+  --color-stop: #b91c1c;
+  --color-stop-fg: #ffffff;
+  --color-stop-hover: #991b1b;
+
+  --color-fg-hover: #020617;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1rem;
+
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05);
+  --shadow-md: 0 2px 8px rgb(15 23 42 / 0.06);
+}
+
+@utility panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+a,
+select,
+input,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html.a11y-text-large {
+  font-size: 1.1875rem;
+}
+
+html.a11y-text-xlarge {
+  font-size: 1.3125rem;
+}
+
+html.a11y-high-contrast {
+  --color-bg: #ffffff;
+  --color-fg: #000000;
+  --color-fg-muted: #1a1a1a;
+  --color-border: #000000;
+  --color-border-strong: #000000;
+  --color-primary: #004052;
+  --color-primary-hover: #002833;
+  --color-surface: #ffffff;
+  --color-surface-inset: #f5f5f5;
+}
+
+html.a11y-reduce-motion *,
+html.a11y-reduce-motion *::before,
+html.a11y-reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

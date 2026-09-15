@@ -1,0 +1,7 @@
+{
+  "packId": "sasl",
+  "label": "SASL isolated signs",
+  "experimental": true,
+  "description": "Slot for a future SASL isolated-sign pack. No trained classifier in this build. Inclusive Tourism will not invent glosses.",
+  "vocabulary": []
+}

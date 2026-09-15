@@ -1,0 +1,18 @@
+{
+  "packId": "asl",
+  "label": "ASL isolated signs",
+  "experimental": true,
+  "description": "Closed isolated-sign vocabulary. Not continuous ASL translation. Spoken phrases come only from this list.",
+  "vocabulary": [
+    { "gloss": "HELLO", "spokenText": "Hello" },
+    { "gloss": "THANK-YOU", "spokenText": "Thank you" },
+    { "gloss": "YES", "spokenText": "Yes" },
+    { "gloss": "NO", "spokenText": "No" },
+    { "gloss": "PLEASE", "spokenText": "Please" },
+    { "gloss": "HELP", "spokenText": "Help" },
+    { "gloss": "STOP", "spokenText": "Stop" },
+    { "gloss": "GOOD", "spokenText": "Good" },
+    { "gloss": "WANT", "spokenText": "Want" },
+    { "gloss": "NEED", "spokenText": "Need" }
+  ]
+}
