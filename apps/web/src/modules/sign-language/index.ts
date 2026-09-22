@@ -20,6 +20,7 @@ export { MediaPipeLandmarkExtractor } from "./MediaPipeLandmarkExtractor";
 export {
   CLASSIFIER_MISSING_REASON,
   EXPERIMENTAL_BANNER,
+  SIGN_SPOKEN_OUTPUT_HINT,
   HOLD_MS,
   LANDMARKS_MISSING_REASON,
   SPEAK_CONFIDENCE,

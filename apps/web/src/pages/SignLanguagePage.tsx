@@ -9,6 +9,7 @@ import { signAvailability } from "@/lib/featureAvailability";
 import {
   COMMUNICATION_ECHO_RULE,
   EXPERIMENTAL_BANNER,
+  SIGN_SPOKEN_OUTPUT_HINT,
   listVocabulary,
   type SignViewState,
 } from "@/modules/sign-language";
@@ -84,6 +85,9 @@ export function SignLanguagePage() {
         captions locale:{" "}
         <strong className="font-semibold text-fg">{prefs.speechInLocale}</strong>.
       </p>
+      <p className="text-base text-fg-muted" role="note">
+        {SIGN_SPOKEN_OUTPUT_HINT}
+      </p>
       <details className="rounded-lg border border-border bg-surface-inset px-4 py-3">
         <summary className="cursor-pointer text-base font-semibold text-fg">
           How signing and partner speech interact
@@ -123,7 +127,9 @@ export function SignLanguagePage() {
                 : "Signer camera is off."}{" "}
               {signerLive
                 ? signView.classifierReady
-                  ? "Classifier loaded."
+                  ? signView.reason?.includes("hand-shape assist")
+                    ? signView.reason
+                    : "Classifier loaded."
                   : `No trained classifier. ${APP_NAME} will not guess signs.`
                 : null}
             </p>

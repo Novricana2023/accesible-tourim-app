@@ -69,4 +69,7 @@ export const LANDMARKS_MISSING_REASON =
   `Hand tracking is unavailable. MediaPipe assets failed to load. ${APP_NAME} will not guess signs.`;
 
 export const EXPERIMENTAL_BANNER =
-  "Experimental. Isolated signs from a closed vocabulary only. This is not ASL, SASL, or BSL sentence translation.";
+  "Experimental. One sign at a time from the vocabulary list only — not full sentence translation. When trained weights are missing, Tasfiri uses basic hand-shape detection for ASL (HELP works best: closed fist on flat palm, both hands visible).";
+
+export const SIGN_SPOKEN_OUTPUT_HINT =
+  "For the partner to hear words aloud: Settings → Spoken output → Device voice or Both, and turn volume up on the phone.";

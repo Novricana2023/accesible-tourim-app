@@ -115,9 +115,9 @@ describe("SignLanguageRuntime", () => {
 
     await runtime.start(fakeCamera(), "asl" satisfies SignLanguagePackId);
     expect(runtime.getStatus()).toBe("live");
-    expect(runtime.getView().classifierReady).toBe(false);
-    expect(runtime.getView().packLoaded).toBe(false);
-    expect(runtime.getView().uncertainty).toBe("pack-not-loaded");
+    expect(runtime.getView().classifierReady).toBe(true);
+    expect(runtime.getView().packLoaded).toBe(true);
+    expect(runtime.getView().reason).toContain("hand-shape assist");
     expect(runtime.getView().vocabulary.map((item) => item.gloss)).toContain("HELLO");
     expect(runtime.getView().lastGloss).toBeNull();
 

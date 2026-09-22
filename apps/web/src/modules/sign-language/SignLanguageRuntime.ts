@@ -12,6 +12,7 @@ import {
 import { ConfidenceGate } from "./confidenceGate";
 import { listVocabulary, spokenPhraseForGloss } from "./GlossToSpeech";
 import { MediaPipeLandmarkExtractor } from "./MediaPipeLandmarkExtractor";
+import { HeuristicSignClassifier } from "./HeuristicSignClassifier";
 import { OnnxSignClassifier } from "./OnnxSignClassifier";
 import { UnavailableClassifier } from "./UnavailableClassifier";
 import {
@@ -169,15 +170,24 @@ export class SignLanguageRuntime {
 
     this.classifier = this.createClassifier(packId);
     const loaded = await this.classifier.load();
-    const classifierReady = loaded.ok;
+    let classifierReady = loaded.ok;
+    let classifierNote: string | null = null;
     if (!classifierReady) {
       await this.classifier.dispose();
-      this.classifier = new UnavailableClassifier();
-      this.bus.emit({
-        type: "feature-unavailable",
-        feature: "sign-classifier",
-        reason: loaded.reason,
-      });
+      if (packId === "asl") {
+        this.classifier = new HeuristicSignClassifier();
+        const heuristic = await this.classifier.load();
+        classifierReady = heuristic.ok;
+        classifierNote =
+          "Basic hand-shape assist is on (trained ASL weights are not installed). Sign slowly with both hands in frame.";
+      } else {
+        this.classifier = new UnavailableClassifier();
+        this.bus.emit({
+          type: "feature-unavailable",
+          feature: "sign-classifier",
+          reason: loaded.reason,
+        });
+      }
     }
 
     let landmarksReady = false;
@@ -223,7 +233,7 @@ export class SignLanguageRuntime {
       classifierReady,
       landmarksReady,
       uncertainty: classifierReady ? "not-recognized" : "pack-not-loaded",
-      reason: classifierReady ? landmarkReason : loaded.ok ? landmarkReason : loaded.reason,
+      reason: classifierNote ?? (classifierReady ? landmarkReason : loaded.ok ? landmarkReason : loaded.reason),
     };
     this.setStatus("live");
     this.emitView();
