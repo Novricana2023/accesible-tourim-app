@@ -5,7 +5,7 @@
  */
 const config = {
   appId: "com.inclusivetourism.app",
-  appName: "Inclusive Tourism",
+  appName: "Tasfiri",
   webDir: "dist",
   server: {
     androidScheme: "https",

@@ -36,7 +36,7 @@ export async function createDetectionProvider(
   const present = await resourceExists(modelUrl);
   if (!present) {
     throw new Error(
-      `The detector weights (${manifest.file}) are not installed. Run npm run models in apps/web.`,
+      `Object detection model (${manifest.file}) is not on this server. The site needs a production build with npm run models before deploy.`,
     );
   }
 

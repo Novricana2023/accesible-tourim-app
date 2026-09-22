@@ -61,8 +61,9 @@ export function messageFor(code: CameraErrorCode): CameraError {
     case "overconstrained":
       return {
         code,
-        message: "This camera could not use the requested settings.",
-        recovery: "Try the other camera, or start again.",
+        message: "This camera could not start with the saved camera choice.",
+        recovery:
+          "Any camera resolution works. Clear the preferred camera in Settings, try the other camera, or reload and allow camera access again.",
       };
     case "track-ended":
       return {

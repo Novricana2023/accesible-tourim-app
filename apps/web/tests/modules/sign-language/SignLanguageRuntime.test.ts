@@ -72,7 +72,7 @@ class ScriptedClassifier implements SignClassifier {
       return {
         ok: false as const,
         reason:
-          "Sign-language pack is not loaded. No trained classifier weights were found. Inclusive Tourism will not guess signs.",
+          "Sign-language pack is not loaded. No trained classifier weights were found. Tasfiri will not guess signs.",
       };
     }
     return { ok: true as const };

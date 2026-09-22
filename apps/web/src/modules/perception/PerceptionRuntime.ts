@@ -208,8 +208,8 @@ export class PerceptionRuntime {
         this.applyInputSize(
           nextSize,
           nextSize < this.startedInputSize
-            ? `Detection input size is ${nextSize} for this device profile.`
-            : `Power-save profile is on. Detection input size is ${nextSize}.`,
+            ? "Adjusted detection quality for this device. Camera resolution is unchanged."
+            : "Power-save lowered detection quality. Camera resolution is unchanged.",
         );
       }
       if (this.lastResult) {
@@ -286,8 +286,8 @@ export class PerceptionRuntime {
         this.provider.configureInputSize?.(this.inputSize);
         this.announceSystem(
           this.deviceClass === "mobile"
-            ? `Mobile profile is on. Detection input size is ${this.inputSize}.`
-            : `Power-save profile is on. Detection input size is ${this.inputSize}.`,
+            ? "Using a lighter on-device detection mode so your phone keeps up. Your camera can be any size."
+            : "Power-save is on. Using lighter detection quality. Your camera can be any size.",
         );
       }
       this.syncCaptureBudget();
@@ -474,14 +474,14 @@ export class PerceptionRuntime {
         this.droppedInputSize = true;
         this.applyInputSize(
           next,
-          `Inference is slow. Input size dropped to ${next} to save power.`,
+          "Detection is running in a lighter mode to save battery. Camera view is unchanged.",
         );
         this.slowSinceMs = now;
         return;
       }
       if (!this.floorAnnounced) {
         this.announceSystem(
-          "Inference is still slow at the smallest input size. Detection will stay at a lower frame rate.",
+          "Detection will stay at a lower frame rate on this device. Point the camera at objects in good light.",
         );
         this.floorAnnounced = true;
       }

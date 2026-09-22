@@ -19,7 +19,7 @@ describe("probeDeviceProfile", () => {
     expect(profile.ios).toBe(true);
     expect(profile.constrained).toBe(true);
     expect(profile.startingInputSize).toBe(320);
-    expect(profile.captureWidth).toBe(640);
+    expect(profile.captureWidth).toBe(960);
     expect(profile.captureFps).toBeLessThan(24);
   });
 

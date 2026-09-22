@@ -1,4 +1,4 @@
-# Inclusive Tourism
+# Tasfiri
 
 Camera-first accessibility web app for vision assistance and isolated sign-language communication.
 

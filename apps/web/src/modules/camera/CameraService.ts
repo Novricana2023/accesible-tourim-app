@@ -301,22 +301,32 @@ export class CameraService {
         audio: false,
         video: {
           facingMode: { ideal: options.facingMode },
-          width: { ideal: options.width },
-          height: { ideal: options.height },
-          frameRate: { ideal: options.fps },
-          ...(options.deviceId ? { deviceId: { exact: options.deviceId } } : {}),
+          width: { ideal: options.width, min: 320 },
+          height: { ideal: options.height, min: 240 },
+          frameRate: { ideal: options.fps, max: 30 },
+          ...(options.deviceId ? { deviceId: { ideal: options.deviceId } } : {}),
         },
       },
       {
         audio: false,
         video: {
           facingMode: { ideal: options.facingMode },
-          ...(options.deviceId ? { deviceId: { exact: options.deviceId } } : {}),
+          ...(options.deviceId ? { deviceId: { ideal: options.deviceId } } : {}),
         },
       },
       {
         audio: false,
-        video: options.deviceId ? { deviceId: { exact: options.deviceId } } : true,
+        video: {
+          facingMode: { ideal: options.facingMode },
+        },
+      },
+      {
+        audio: false,
+        video: options.deviceId ? { deviceId: { ideal: options.deviceId } } : true,
+      },
+      {
+        audio: false,
+        video: true,
       },
     ];
 

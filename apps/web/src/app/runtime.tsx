@@ -34,6 +34,7 @@ import { createEventBus } from "@/app/EventBus";
 import { ModeController } from "@/app/ModeController";
 import { SpeechManager } from "@/modules/speech/SpeechManager";
 import { probeCapabilities } from "@/lib/capabilities";
+import { probeLocalAiReadiness } from "@/lib/pwa/localAiReadiness";
 import { probeDeviceProfile } from "@/lib/deviceProfile";
 import { createLatestWinsThrottle } from "@/lib/uiThrottle";
 import { CameraService } from "@/modules/camera/CameraService";
@@ -424,6 +425,17 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        const aiReady = await probeLocalAiReadiness(stored.signPackId);
+        if (!cancelled && !aiReady.detection) {
+          setPerceptionUnavailableReason(
+            "Object detection files are missing on this server. Redeploy with a full production build (npm run build:production).",
+          );
+        }
+      } catch {
+        /* probe is best-effort */
+      }
+
+      try {
         const report = await probeCapabilities();
         if (cancelled) {
           return;
@@ -692,7 +704,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     [services],
   );
 
-  const startVision = useCallback(async () => {
+  const startVision = useCallback(async (opts?: { skipNavigate?: boolean }) => {
     if (!capabilities?.available.camera) {
       emit({
         type: "feature-unavailable",
@@ -703,7 +715,9 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     }
 
     await enterMode("assist");
-    navigate("/vision");
+    if (!opts?.skipNavigate) {
+      navigate("/vision");
+    }
     if (!prefs) {
       return;
     }
@@ -879,12 +893,12 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    await enterMode("assist");
+    navigate("/navigate");
+
     const visionOn = !navigationNeedsVisionStart(services.perception.getStatus());
     if (!visionOn) {
-      await startVision();
-    } else {
-      await enterMode("assist");
-      navigate("/navigate");
+      await startVision({ skipNavigate: true });
     }
 
     if (!visionIsReadyForNavigation(services.perception.getStatus())) {
@@ -899,7 +913,6 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     services.navigation.start();
     services.speech.setPathAssistanceActive(true);
     services.speech.announceSystem(PATH_ASSISTANCE_START_SPEECH, false);
-    navigate("/navigate");
   }, [capabilities, emit, enterMode, navigate, services, startVision]);
 
   const stopNavigation = useCallback(async () => {

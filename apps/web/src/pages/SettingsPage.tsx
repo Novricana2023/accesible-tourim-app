@@ -345,7 +345,8 @@ export function SettingsPage() {
           </select>
           <p className="text-base text-fg-muted">
             Used the next time assist modes request the camera. Sign language always uses the front
-            camera.
+            camera. Any phone camera resolution works; detection quality is adjusted separately in
+            software, not by forcing a particular camera size.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="secondary" onClick={() => void refreshCameras()}>

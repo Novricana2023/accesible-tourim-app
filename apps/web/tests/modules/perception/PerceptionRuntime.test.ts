@@ -262,7 +262,7 @@ describe("PerceptionRuntime", () => {
       events.some(
         (event) =>
           event.type === "speech-request" &&
-          event.request.text.includes("Input size dropped to 416"),
+          event.request.text.includes("lighter mode to save battery"),
       ),
     ).toBe(true);
     await runtime.stop();
