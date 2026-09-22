@@ -427,7 +427,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const aiReady = await probeLocalAiReadiness(stored.signPackId);
+        const aiReady = await probeLocalAiReadiness(stored.signPackId ?? "asl");
         if (!cancelled && !aiReady.detection) {
           setPerceptionUnavailableReason(
             "Object detection files are missing on this server. Redeploy with a full production build (npm run build:production).",

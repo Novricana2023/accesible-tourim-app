@@ -172,7 +172,8 @@ export class SignLanguageRuntime {
     const loaded = await this.classifier.load();
     let classifierReady = loaded.ok;
     let classifierNote: string | null = null;
-    if (!classifierReady) {
+    const primaryLoadReason = loaded.ok ? null : loaded.reason;
+    if (!loaded.ok) {
       await this.classifier.dispose();
       if (packId === "asl") {
         this.classifier = new HeuristicSignClassifier();
@@ -191,7 +192,7 @@ export class SignLanguageRuntime {
         this.bus.emit({
           type: "feature-unavailable",
           feature: "sign-classifier",
-          reason: loaded.reason,
+          reason: primaryLoadReason ?? CLASSIFIER_MISSING_REASON,
         });
       }
     }
@@ -239,7 +240,9 @@ export class SignLanguageRuntime {
       classifierReady,
       landmarksReady,
       uncertainty: classifierReady ? "not-recognized" : "pack-not-loaded",
-      reason: classifierNote ?? (classifierReady ? landmarkReason : loaded.ok ? landmarkReason : loaded.reason),
+      reason:
+        classifierNote ??
+        (classifierReady ? landmarkReason : primaryLoadReason ?? landmarkReason),
     };
     this.setStatus("live");
     this.emitView();
