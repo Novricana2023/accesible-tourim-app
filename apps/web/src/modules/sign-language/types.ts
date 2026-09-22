@@ -60,7 +60,7 @@ export const SPEAK_CONFIDENCE = 0.75;
 export const UNCERTAIN_CONFIDENCE = 0.5;
 export const HOLD_MS = 400;
 export const SEQUENCE_FRAMES = 24;
-export const CLASSIFY_EVERY = 4;
+export const CLASSIFY_EVERY = 2;
 
 export const CLASSIFIER_MISSING_REASON =
   `Sign-language pack is not loaded. No trained classifier weights were found. ${APP_NAME} will not guess signs.`;

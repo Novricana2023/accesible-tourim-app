@@ -7,6 +7,7 @@ export interface SpeakOptions {
 }
 
 export interface SpeechOutput {
+  prime?(): void;
   speak(text: string, options: SpeakOptions): void;
   cancel(): void;
   pause(): void;
@@ -55,6 +56,23 @@ export class TtsAdapter implements SpeechOutput {
 
   isSpeaking(): boolean {
     return speechAvailable() && window.speechSynthesis.speaking;
+  }
+
+  /** Unlock speechSynthesis on iOS/Safari — call from a user tap before async sign recognition. */
+  prime(): void {
+    if (!speechAvailable()) {
+      return;
+    }
+    try {
+      window.speechSynthesis.resume();
+    } catch {
+      /* some browsers omit resume */
+    }
+    void window.speechSynthesis.getVoices();
+    const utterance = new SpeechSynthesisUtterance("\u200b");
+    utterance.volume = 0.01;
+    utterance.rate = 2;
+    window.speechSynthesis.speak(utterance);
   }
 
   speak(text: string, options: SpeakOptions): void {

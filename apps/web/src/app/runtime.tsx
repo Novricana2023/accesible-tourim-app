@@ -102,6 +102,7 @@ interface MaraRuntimeValue {
   stopSignerChannel: () => Promise<void>;
   startSpeakerListening: () => Promise<void>;
   stopSpeakerListening: () => Promise<void>;
+  testSignSpeechOutput: () => void;
   stop: () => Promise<void>;
   voiceStatus: SttStatus;
   voiceEngine: SttEngine;
@@ -145,6 +146,7 @@ interface MaraSessionValue {
   stopSignerChannel: () => Promise<void>;
   startSpeakerListening: () => Promise<void>;
   stopSpeakerListening: () => Promise<void>;
+  testSignSpeechOutput: () => void;
   stop: () => Promise<void>;
   voiceStatus: SttStatus;
   voiceEngine: SttEngine;
@@ -915,6 +917,10 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     services.speech.announceSystem(PATH_ASSISTANCE_START_SPEECH, false);
   }, [capabilities, emit, enterMode, navigate, services, startVision]);
 
+  const testSignSpeechOutput = useCallback(() => {
+    services.speech.testSignSpeechOutput();
+  }, [services]);
+
   const stopNavigation = useCallback(async () => {
     if (!services.navigation.isActive()) {
       services.speech.announceSystem("Path assistance is not running.", false);
@@ -959,6 +965,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
       return;
     }
     const requestOptions = cameraRequestWithPrefs("communicate", deviceProfile, prefs);
+    services.speech.primeAudio();
     services.speech.announceSystem(
       "Communication mode is on. Requesting the front camera for isolated signs.",
       true,
@@ -1187,6 +1194,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
       stopSignerChannel,
       startSpeakerListening,
       stopSpeakerListening,
+      testSignSpeechOutput,
       stop,
       voiceStatus,
       voiceEngine,
@@ -1234,6 +1242,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     stopReading,
     stopSignerChannel,
     stopSpeakerListening,
+    testSignSpeechOutput,
     toggleVoice,
     updatePrefs,
     voiceEngine,

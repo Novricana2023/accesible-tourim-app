@@ -75,7 +75,7 @@ export class SignLanguageRuntime {
   private readonly createClassifier: (packId: SignLanguagePackId) => SignClassifier;
   private readonly now: () => number;
   private readonly session: CommunicationSession;
-  private readonly gate = new ConfidenceGate();
+  private gate = new ConfidenceGate();
   private readonly viewListeners = new Set<(view: SignViewState) => void>();
   private readonly statusListeners = new Set<(status: SignRuntimeStatus) => void>();
   private extractor: LandmarkExtractor | null = null;
@@ -153,7 +153,7 @@ export class SignLanguageRuntime {
     await this.stop();
     this.camera = camera;
     this.packId = packId;
-    this.gate.reset();
+    this.gate = new ConfidenceGate();
     this.sequence = [];
     this.framesSinceClassify = 0;
     this.setStatus("loading");
@@ -179,8 +179,14 @@ export class SignLanguageRuntime {
         const heuristic = await this.classifier.load();
         classifierReady = heuristic.ok;
         classifierNote =
-          "Basic hand-shape assist is on (trained ASL weights are not installed). Sign slowly with both hands in frame.";
+          "Basic hand-shape assist is on (trained ASL weights are not installed). HELLO: one open palm. HELP: fist on flat palm, both hands visible.";
+        this.gate = new ConfidenceGate({
+          speakAt: 0.68,
+          uncertainAt: 0.42,
+          holdMs: 200,
+        });
       } else {
+        this.gate = new ConfidenceGate();
         this.classifier = new UnavailableClassifier();
         this.bus.emit({
           type: "feature-unavailable",

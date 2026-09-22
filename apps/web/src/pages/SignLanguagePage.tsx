@@ -13,6 +13,7 @@ import {
   listVocabulary,
   type SignViewState,
 } from "@/modules/sign-language";
+import { isAppleMobile } from "@/lib/isAppleMobile";
 import { partnerSpeechDisclosure } from "@/modules/speech/SttAdapter";
 import { ArrowRight, Hand, Mic } from "lucide-react";
 
@@ -29,6 +30,7 @@ export function SignLanguagePage() {
     voiceEngine,
     voiceFailure,
     startCommunicate,
+    testSignSpeechOutput,
     stopSignerChannel,
     startSpeakerListening,
     stopSpeakerListening,
@@ -88,6 +90,12 @@ export function SignLanguagePage() {
       <p className="text-base text-fg-muted" role="note">
         {SIGN_SPOKEN_OUTPUT_HINT}
       </p>
+      {isAppleMobile() ? (
+        <p className="text-base text-fg-muted" role="note">
+          iPhone/iPad: use Safari or Chrome, tap <strong className="font-semibold text-fg">Test speaker</strong>{" "}
+          once so iOS allows spoken output. Sign recognition is slower than on Android or a laptop.
+        </p>
+      ) : null}
       <details className="rounded-lg border border-border bg-surface-inset px-4 py-3">
         <summary className="cursor-pointer text-base font-semibold text-fg">
           How signing and partner speech interact
@@ -159,6 +167,16 @@ export function SignLanguagePage() {
             </div>
 
             <div role="group" aria-label="Signer channel actions" className="flex flex-col gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="large"
+                onClick={() => {
+                  testSignSpeechOutput();
+                }}
+              >
+                Test speaker
+              </Button>
               {signerLive &&
               cameraStatus !== "denied" &&
               cameraStatus !== "unavailable" &&
@@ -179,6 +197,7 @@ export function SignLanguagePage() {
                   size="large"
                   disabled={!cameraOk}
                   onClick={() => {
+                    testSignSpeechOutput();
                     void startCommunicate();
                   }}
                 >

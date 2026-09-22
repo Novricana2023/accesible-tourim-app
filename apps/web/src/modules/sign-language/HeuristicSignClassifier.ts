@@ -14,38 +14,41 @@ export class HeuristicSignClassifier implements SignClassifier {
       return null;
     }
 
+    const MIN = 0.68;
     const candidates: SignClassifierResult[] = [];
 
     if (frame.hands.length >= 2) {
       const help = scoreHelp(frame.hands[0], frame.hands[1]);
-      if (help >= 0.78) {
-        candidates.push({ gloss: "HELP", confidence: help });
+      const helpAlt = scoreHelp(frame.hands[1], frame.hands[0]);
+      const bestHelp = Math.max(help, helpAlt);
+      if (bestHelp >= MIN) {
+        candidates.push({ gloss: "HELP", confidence: bestHelp });
       }
     }
 
     for (const hand of frame.hands) {
       const hello = scoreHello(hand);
-      if (hello >= 0.78) {
+      if (hello >= MIN) {
         candidates.push({ gloss: "HELLO", confidence: hello });
       }
       const stop = scoreStop(hand);
-      if (stop >= 0.78) {
+      if (stop >= MIN) {
         candidates.push({ gloss: "STOP", confidence: stop });
       }
       const yes = scoreYes(hand);
-      if (yes >= 0.78) {
+      if (yes >= MIN) {
         candidates.push({ gloss: "YES", confidence: yes });
       }
       const no = scoreNo(hand);
-      if (no >= 0.78) {
+      if (no >= MIN) {
         candidates.push({ gloss: "NO", confidence: no });
       }
       const please = scorePlease(hand);
-      if (please >= 0.78) {
+      if (please >= MIN) {
         candidates.push({ gloss: "PLEASE", confidence: please });
       }
       const thank = scoreThankYou(hand);
-      if (thank >= 0.78) {
+      if (thank >= MIN) {
         candidates.push({ gloss: "THANK-YOU", confidence: thank });
       }
     }
@@ -79,11 +82,11 @@ function scoreHelp(a: number[], b: number[]): number {
 function scoreHello(hand: number[]): number {
   const ext = fingerExtensions(hand);
   const open =
-    ext.index > 0.65 && ext.middle > 0.65 && ext.ring > 0.65 && ext.pinky > 0.55;
+    ext.index > 0.5 && ext.middle > 0.5 && ext.ring > 0.45 && ext.pinky > 0.4;
   if (!open) {
     return 0;
   }
-  return clamp01(0.8 + ext.index * 0.15);
+  return clamp01(0.72 + (ext.index + ext.middle) * 0.12);
 }
 
 function scoreStop(hand: number[]): number {

@@ -183,6 +183,10 @@ export class SpeechPriorityQueue {
     this.tts.setVoice(voice);
   }
 
+  getTts(): SpeechOutput {
+    return this.tts;
+  }
+
   getCurrent(): SpeechRequest | null {
     return this.current;
   }

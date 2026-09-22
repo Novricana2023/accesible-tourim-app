@@ -137,11 +137,27 @@ export class SpeechManager {
     this.policy.updateOptions(presets[level]);
   }
 
+  primeAudio(): void {
+    const prefs = this.getPrefs();
+    if (prefs.ttsMode === "aria-live") {
+      return;
+    }
+    this.queue.getTts().prime?.();
+  }
+
+  testSignSpeechOutput(): void {
+    this.primeAudio();
+    this.announceSystem(
+      "Tasfiri speech is working. Signed words will be spoken like this.",
+      false,
+    );
+  }
+
   ingestSign(prediction: SignPrediction): void {
     if (!prediction.spokenText.trim()) {
       return;
     }
-    if (prediction.confidence < 0.75) {
+    if (prediction.confidence < 0.65) {
       return;
     }
     this.enqueue({
