@@ -9,8 +9,6 @@ import {
   sanitizeTextScale,
   type UserPrefs,
 } from "@mara/shared";
-import { detectScreenReaderHint } from "@/a11y/ScreenReaderDetect";
-
 export const PREFS_STORAGE_KEY = "inclusive-tourism:prefs:v2";
 const LEGACY_PREFS_STORAGE_KEY = "mara:prefs:v1";
 
@@ -22,7 +20,7 @@ export function defaultPrefs(): UserPrefs {
   );
 
   return {
-    ttsMode: detectScreenReaderHint() ? "aria-live" : "both",
+    ttsMode: "both",
     mutedCategories: [],
     ocrEnabled: true,
     visualOverlay: false,

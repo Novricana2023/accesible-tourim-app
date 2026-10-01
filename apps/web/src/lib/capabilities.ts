@@ -109,14 +109,21 @@ async function probeMedia(): Promise<{
       return { camera: true, mic: true, notes };
     }
 
+    const camera = hasVideo || (window.isSecureContext && api);
+    const mic = hasAudio || (window.isSecureContext && api);
+
     if (!hasVideo) {
-      notes.push("No camera was listed on this device.");
+      notes.push(
+        "No camera was listed yet. Allow camera access when you start vision, reading, navigation, or sign language.",
+      );
     }
     if (!hasAudio) {
-      notes.push("No microphone was listed on this device.");
+      notes.push(
+        "No microphone was listed yet. Allow microphone access when you start partner speech listening.",
+      );
     }
 
-    return { camera: hasVideo, mic: hasAudio, notes };
+    return { camera, mic, notes };
   } catch {
     notes.push("Media device list could not be read. The capture API is present.");
     return { camera: true, mic: true, notes };

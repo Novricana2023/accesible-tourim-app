@@ -740,7 +740,9 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
       if (services.camera.getStatus() === "live") {
         services.echo.stop();
         const backend =
-          capabilities?.inferenceBackend === "webgpu" ? "webgpu" : "wasm";
+          deviceProfile.ios || capabilities?.inferenceBackend !== "webgpu"
+            ? "wasm"
+            : "webgpu";
         try {
           await services.perception.start(services.camera, backend, {
             profile: prefs?.performanceProfile ?? "balanced",
@@ -1010,6 +1012,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
   }, [services]);
 
   const startSpeakerListening = useCallback(async () => {
+    services.speech.primeAudio();
     if (services.stt.getSink() === "assist-commands") {
       services.stt.stop();
       setLastHeardCommand(null);

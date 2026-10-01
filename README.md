@@ -1,4 +1,4 @@
-# Tasfiri
+# Tafsiri
 
 Camera-first accessibility web app for vision assistance and isolated sign-language communication.
 

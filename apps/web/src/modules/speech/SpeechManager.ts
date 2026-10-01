@@ -148,7 +148,7 @@ export class SpeechManager {
   testSignSpeechOutput(): void {
     this.primeAudio();
     this.announceSystem(
-      "Tasfiri speech is working. Signed words will be spoken like this.",
+      "Tafsiri speech is working. Signed words will be spoken like this.",
       false,
     );
   }
