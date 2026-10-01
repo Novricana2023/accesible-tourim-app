@@ -72,4 +72,4 @@ export const EXPERIMENTAL_BANNER =
   "Experimental. One sign at a time from the vocabulary list only, not full sentence translation. When trained weights are missing, Tafsiri uses basic hand-shape detection for ASL (HELP: closed fist on flat palm, both hands visible).";
 
 export const SIGN_SPOKEN_OUTPUT_HINT =
-  "For the partner to hear words aloud: Settings → Spoken output → Device voice or Both, and turn volume up on the phone.";
+  "For the partner to hear words: use Test speaker, then tap Speak below any word if signing alone does not trigger speech. Settings → Spoken output → Both, volume up.";

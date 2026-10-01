@@ -157,7 +157,7 @@ export class SpeechManager {
     if (!prediction.spokenText.trim()) {
       return;
     }
-    if (prediction.confidence < 0.65) {
+    if (prediction.confidence < 0.5) {
       return;
     }
     this.enqueue({

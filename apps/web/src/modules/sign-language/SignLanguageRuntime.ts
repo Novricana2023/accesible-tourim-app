@@ -182,9 +182,9 @@ export class SignLanguageRuntime {
         classifierNote =
           "Basic hand-shape assist is on (trained ASL weights are not installed). HELLO: one open palm. HELP: fist on flat palm, both hands visible.";
         this.gate = new ConfidenceGate({
-          speakAt: 0.68,
-          uncertainAt: 0.42,
-          holdMs: 200,
+          speakAt: 0.55,
+          uncertainAt: 0.35,
+          holdMs: 80,
         });
       } else {
         this.gate = new ConfidenceGate();
@@ -246,6 +246,27 @@ export class SignLanguageRuntime {
     };
     this.setStatus("live");
     this.emitView();
+  }
+
+  /** Speak a vocabulary gloss aloud (tap fallback or accessibility). */
+  speakGloss(gloss: string): void {
+    if (this.status !== "live") {
+      return;
+    }
+    const normalized = gloss.trim().toUpperCase();
+    if (!this.allowedGloss(normalized)) {
+      return;
+    }
+    this.gate.reset();
+    this.applyDecision(
+      {
+        uncertainty: "none",
+        gloss: normalized,
+        confidence: 1,
+        speak: true,
+      },
+      this.now(),
+    );
   }
 
   async stop(): Promise<void> {

@@ -323,7 +323,7 @@ describe("SpeechManager", () => {
       packId: "asl",
       gloss: "HELLO",
       spokenText: "Hello",
-      confidence: 0.6,
+      confidence: 0.45,
       kind: "isolated",
       startedMs: 1,
       endedMs: 2,

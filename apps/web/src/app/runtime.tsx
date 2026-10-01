@@ -103,6 +103,7 @@ interface MaraRuntimeValue {
   startSpeakerListening: () => Promise<void>;
   stopSpeakerListening: () => Promise<void>;
   testSignSpeechOutput: () => void;
+  speakSignGloss: (gloss: string) => void;
   stop: () => Promise<void>;
   voiceStatus: SttStatus;
   voiceEngine: SttEngine;
@@ -147,6 +148,7 @@ interface MaraSessionValue {
   startSpeakerListening: () => Promise<void>;
   stopSpeakerListening: () => Promise<void>;
   testSignSpeechOutput: () => void;
+  speakSignGloss: (gloss: string) => void;
   stop: () => Promise<void>;
   voiceStatus: SttStatus;
   voiceEngine: SttEngine;
@@ -923,6 +925,14 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     services.speech.testSignSpeechOutput();
   }, [services]);
 
+  const speakSignGloss = useCallback(
+    (gloss: string) => {
+      services.speech.primeAudio();
+      services.sign.speakGloss(gloss);
+    },
+    [services],
+  );
+
   const stopNavigation = useCallback(async () => {
     if (!services.navigation.isActive()) {
       services.speech.announceSystem("Path assistance is not running.", false);
@@ -966,6 +976,9 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     if (!prefs) {
       return;
     }
+    if (prefs.ttsMode === "aria-live" && capabilities?.available["speech-synthesis"]) {
+      await updatePrefs({ ttsMode: "both" });
+    }
     const requestOptions = cameraRequestWithPrefs("communicate", deviceProfile, prefs);
     services.speech.primeAudio();
     services.speech.announceSystem(
@@ -997,7 +1010,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
         );
       }
     }
-  }, [capabilities, deviceProfile, emit, enterMode, navigate, prefs, services]);
+  }, [capabilities, deviceProfile, emit, enterMode, navigate, prefs, services, updatePrefs]);
 
   const stopSignerChannel = useCallback(async () => {
     services.speech.cancel("sign");
@@ -1198,6 +1211,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
       startSpeakerListening,
       stopSpeakerListening,
       testSignSpeechOutput,
+      speakSignGloss,
       stop,
       voiceStatus,
       voiceEngine,
@@ -1246,6 +1260,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     stopSignerChannel,
     stopSpeakerListening,
     testSignSpeechOutput,
+    speakSignGloss,
     toggleVoice,
     updatePrefs,
     voiceEngine,

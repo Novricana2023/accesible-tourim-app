@@ -31,6 +31,7 @@ export function SignLanguagePage() {
     voiceFailure,
     startCommunicate,
     testSignSpeechOutput,
+    speakSignGloss,
     stopSignerChannel,
     startSpeakerListening,
     stopSpeakerListening,
@@ -130,8 +131,10 @@ export function SignLanguagePage() {
             <p className="text-lg" role="status">
               {signerLive
                 ? signView.landmarksReady
-                  ? `Hand tracking is on. Hands in frame: ${signView.handsDetected}.`
-                  : "Hand tracking is starting."
+                  ? signView.handsDetected > 0
+                    ? `Hand tracking is on. Hands in frame: ${signView.handsDetected}.`
+                    : "Hand tracking is on. Show your hands to the front camera, or tap Speak below."
+                  : "Hand tracking is starting. If this stays more than a minute, reload and check your connection."
                 : "Signer camera is off."}{" "}
               {signerLive
                 ? signView.classifierReady
@@ -206,18 +209,33 @@ export function SignLanguagePage() {
               )}
             </div>
 
-            <details className="rounded-lg border border-border bg-surface-inset px-4 py-3">
-              <summary className="cursor-pointer text-base font-bold">
-                Supported vocabulary ({vocabulary.length})
-              </summary>
-              <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto" aria-label="Supported signs">
+            <div className="space-y-3 rounded-lg border border-border bg-surface-inset px-4 py-4">
+              <h3 className="text-base font-bold">Speak a word aloud</h3>
+              <p className="text-sm text-fg-muted">
+                Tap after signing, or if the camera did not recognize your sign. The partner will
+                hear the spoken phrase.
+              </p>
+              <ul
+                className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+                aria-label="Speak vocabulary aloud"
+              >
                 {vocabulary.map((entry) => (
-                  <li key={entry.gloss} className="text-base">
-                    {entry.gloss}: {entry.spokenText}
+                  <li key={entry.gloss}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="h-auto min-h-12 w-full py-2 text-base"
+                      disabled={!signerLive}
+                      onClick={() => {
+                        speakSignGloss(entry.gloss);
+                      }}
+                    >
+                      Speak {entry.spokenText}
+                    </Button>
                   </li>
                 ))}
               </ul>
-            </details>
+            </div>
           </CardBody>
         </Card>
 

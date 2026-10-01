@@ -14,7 +14,7 @@ export class HeuristicSignClassifier implements SignClassifier {
       return null;
     }
 
-    const MIN = 0.68;
+    const MIN = 0.55;
     const candidates: SignClassifierResult[] = [];
 
     if (frame.hands.length >= 2) {
@@ -27,7 +27,7 @@ export class HeuristicSignClassifier implements SignClassifier {
     }
 
     for (const hand of frame.hands) {
-      const hello = scoreHello(hand);
+      const hello = Math.max(scoreHello(hand), scoreOpenPalm(hand));
       if (hello >= MIN) {
         candidates.push({ gloss: "HELLO", confidence: hello });
       }
@@ -82,11 +82,20 @@ function scoreHelp(a: number[], b: number[]): number {
 function scoreHello(hand: number[]): number {
   const ext = fingerExtensions(hand);
   const open =
-    ext.index > 0.5 && ext.middle > 0.5 && ext.ring > 0.45 && ext.pinky > 0.4;
+    ext.index > 0.4 && ext.middle > 0.4 && ext.ring > 0.35 && ext.pinky > 0.3;
   if (!open) {
     return 0;
   }
-  return clamp01(0.72 + (ext.index + ext.middle) * 0.12);
+  return clamp01(0.7 + (ext.index + ext.middle) * 0.12);
+}
+
+/** Open hand toward camera (common hello / stop). */
+function scoreOpenPalm(hand: number[]): number {
+  const avg = averageExtension(hand);
+  if (avg < 0.32 || avg > 0.95) {
+    return 0;
+  }
+  return clamp01(0.58 + avg * 0.35);
 }
 
 function scoreStop(hand: number[]): number {
