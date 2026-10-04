@@ -44,7 +44,7 @@ export const PATH_ASSISTANCE_STOP_SPEECH =
   "Path assistance is off. Continuous vision is still on.";
 
 export const PATH_ASSISTANCE_NEEDS_VISION =
-  "Path assistance needs continuous vision. Object detection did not start.";
+  "Path assistance needs continuous vision. Allow the rear camera, wait until video dimensions are ready, and ensure object-detection models deployed (build:production).";
 
 export const PATH_ASSISTANCE_NEEDS_CAMERA =
   "Path assistance is unavailable. No camera was found on this device.";

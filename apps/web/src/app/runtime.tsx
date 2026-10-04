@@ -727,20 +727,33 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     }
     const requestOptions = cameraRequestWithPrefs("assist", deviceProfile, prefs);
     const cameraAlreadyLive = services.camera.getStatus() === "live";
+    const facingLabel =
+      requestOptions.facingMode === "user" ? "front camera" : "rear camera";
     services.speech.announceSystem(
       cameraAlreadyLive
         ? "Continuous vision is on. Using the live camera."
-        : "Continuous vision is on. Requesting the rear camera.",
+        : `Continuous vision is on. Requesting the ${facingLabel}.`,
       !cameraAlreadyLive,
     );
     try {
       if (!cameraAlreadyLive) {
         await services.camera.request(requestOptions);
-      } else if (services.camera.getOptions()?.facingMode === "user") {
-        await services.camera.reconfigure({ facingMode: "environment" });
+      } else if (services.camera.getOptions()?.facingMode !== requestOptions.facingMode) {
+        await services.camera.reconfigure({
+          facingMode: requestOptions.facingMode,
+          deviceId: requestOptions.deviceId,
+        });
       }
       if (services.camera.getStatus() === "live") {
         services.echo.stop();
+        const captureReady = await services.camera.waitUntilCaptureReady();
+        if (!captureReady) {
+          services.speech.announceSystem(
+            "The camera is live but video is not ready yet. Wait a moment and start vision again.",
+            true,
+          );
+          return;
+        }
         const backend =
           deviceProfile.ios || capabilities?.inferenceBackend !== "webgpu"
             ? "wasm"
@@ -819,17 +832,22 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     }
     const requestOptions = cameraRequestWithPrefs("assist", deviceProfile, prefs);
     const cameraAlreadyLive = services.camera.getStatus() === "live";
+    const readFacingLabel =
+      requestOptions.facingMode === "user" ? "front camera" : "rear camera";
     services.speech.announceSystem(
       cameraAlreadyLive
         ? "Reading is on. Using the live camera."
-        : "Reading is on. Requesting the rear camera.",
+        : `Reading is on. Requesting the ${readFacingLabel}.`,
       !cameraAlreadyLive,
     );
     try {
       if (!cameraAlreadyLive) {
         await services.camera.request(requestOptions);
-      } else if (services.camera.getOptions()?.facingMode === "user") {
-        await services.camera.reconfigure({ facingMode: "environment" });
+      } else if (services.camera.getOptions()?.facingMode !== requestOptions.facingMode) {
+        await services.camera.reconfigure({
+          facingMode: requestOptions.facingMode,
+          deviceId: requestOptions.deviceId,
+        });
       }
       if (services.camera.getStatus() === "live") {
         services.echo.stop();
@@ -989,6 +1007,7 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
       await services.camera.request(requestOptions);
       if (services.camera.getStatus() === "live") {
         services.echo.stop();
+        await services.camera.waitUntilCaptureReady();
         services.speech.announceSystem(
           "Camera is live. Experimental isolated-sign mode. This is not sentence translation.",
           false,

@@ -22,6 +22,9 @@ export type CameraErrorCode =
   | "insecure"
   | "overconstrained"
   | "track-ended"
+  | "in-use"
+  | "aborted"
+  | "unsupported-api"
   | "unknown";
 
 export interface CameraError {

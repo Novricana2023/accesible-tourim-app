@@ -218,7 +218,7 @@ describe("SpeechManager", () => {
     expect(manager.getQueue().getCurrent()?.id).toBe("hazard");
   });
 
-  it("applies speech rate to the utterance", () => {
+  it("applies speech rate to the utterance", async () => {
     const spoken: Array<{ text: string; rate: number }> = [];
 
     class FakeUtterance {
@@ -259,6 +259,7 @@ describe("SpeechManager", () => {
     const adapter = new TtsAdapter();
     adapter.setRate(1.4);
     adapter.speak("Person ahead.", { rate: 1.4 });
+    await Promise.resolve();
     expect(spoken).toEqual([{ text: "Person ahead.", rate: 1.4 }]);
 
     const tts = new FakeTts();

@@ -283,11 +283,11 @@ export class PerceptionRuntime {
         this.deviceClass,
       );
       if (this.inputSize !== this.provider.inputSize) {
-        this.provider.configureInputSize?.(this.inputSize);
+        this.syncProviderInputSize(this.inputSize);
         this.announceSystem(
           this.deviceClass === "mobile"
-            ? "Using a lighter on-device detection mode so your phone keeps up. Your camera can be any size."
-            : "Power-save is on. Using lighter detection quality. Your camera can be any size.",
+            ? "Using a lighter capture size for detection so your phone keeps up. Inference stays at full model quality."
+            : "Power-save is on. Using a lighter camera capture for detection. Inference stays at full model quality.",
         );
       }
       this.syncCaptureBudget();
@@ -495,13 +495,19 @@ export class PerceptionRuntime {
       return;
     }
     this.inputSize = size;
-    this.provider?.configureInputSize?.(size);
+    this.syncProviderInputSize(size);
     this.syncCaptureBudget();
     this.announceSystem(announcement);
   }
 
   private syncCaptureBudget(): void {
     this.camera?.setCaptureBudget?.("perception", this.inputSize);
+  }
+
+  private syncProviderInputSize(size: DetectionInputSize): void {
+    if (this.provider?.variableInputSize) {
+      this.provider.configureInputSize?.(size);
+    }
   }
 
   private announceSystem(text: string): void {

@@ -9,6 +9,8 @@ export interface RawDetection {
 export interface DetectionProvider {
   readonly id: string;
   readonly inputSize: 320 | 416 | 640;
+  /** When false, runtime may only shrink camera capture — not ONNX tensor shape. */
+  readonly variableInputSize?: boolean;
   readonly labels: readonly string[];
   load(): Promise<{ backend: "webgpu" | "wasm" }>;
   infer(frame: CameraFrame): Promise<{

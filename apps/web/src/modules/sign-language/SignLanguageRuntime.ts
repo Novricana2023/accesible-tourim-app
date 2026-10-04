@@ -33,6 +33,7 @@ export interface SignViewState {
   status: SignRuntimeStatus;
   experimentalBanner: string;
   packId: SignLanguagePackId | null;
+  classifierId: string | null;
   packLoaded: boolean;
   classifierReady: boolean;
   landmarksReady: boolean;
@@ -57,6 +58,7 @@ const DEFAULT_VIEW: SignViewState = {
   status: "idle",
   experimentalBanner: EXPERIMENTAL_BANNER,
   packId: null,
+  classifierId: null,
   packLoaded: false,
   classifierReady: false,
   landmarksReady: false,
@@ -164,12 +166,38 @@ export class SignLanguageRuntime {
       packId,
       vocabulary,
       uncertainty: "pack-not-loaded",
-      reason: CLASSIFIER_MISSING_REASON,
+      reason: "Loading sign assist…",
     };
     this.emitView();
 
+    const cameraLive =
+      typeof camera.getStatus === "function" ? camera.getStatus() === "live" : false;
+    if (cameraLive) {
+      const ready =
+        typeof camera.waitUntilCaptureReady === "function"
+          ? await camera.waitUntilCaptureReady()
+          : true;
+      if (!ready) {
+        this.bus.emit({
+          type: "feature-unavailable",
+          feature: "camera",
+          reason:
+            "The camera stream has no video dimensions yet. Wait a moment and try again, or reload and allow camera access.",
+        });
+      }
+    }
+
     this.classifier = this.createClassifier(packId);
-    const loaded = await this.classifier.load();
+    let loaded: Awaited<ReturnType<SignClassifier["load"]>>;
+    try {
+      loaded = await this.classifier.load();
+    } catch (error) {
+      loaded = {
+        ok: false,
+        reason:
+          error instanceof Error ? error.message : CLASSIFIER_MISSING_REASON,
+      };
+    }
     let classifierReady = loaded.ok;
     let classifierNote: string | null = null;
     const primaryLoadReason = loaded.ok ? null : loaded.reason;
@@ -206,10 +234,13 @@ export class SignLanguageRuntime {
           void this.handleLandmarks(frame);
         },
         (reason) => {
+          const landmarkMsg = reason || LANDMARKS_MISSING_REASON;
           this.view = {
             ...this.view,
             landmarksReady: false,
-            reason: reason || LANDMARKS_MISSING_REASON,
+            reason: this.view.classifierReady
+              ? `${landmarkMsg} Tap Speak below to output words without hand tracking.`
+              : landmarkMsg,
           };
           this.emitView();
         },
@@ -233,18 +264,21 @@ export class SignLanguageRuntime {
       });
     }
 
+    const assistReason = classifierNote
+      ? classifierNote
+      : classifierReady
+        ? landmarkReason
+        : primaryLoadReason ?? landmarkReason;
     this.view = {
       ...this.view,
-      status: "live",
+      classifierId: this.classifier?.id ?? null,
       packLoaded: classifierReady,
       classifierReady,
       landmarksReady,
       uncertainty: classifierReady ? "not-recognized" : "pack-not-loaded",
-      reason:
-        classifierNote ??
-        (classifierReady ? landmarkReason : primaryLoadReason ?? landmarkReason),
+      reason: assistReason,
     };
-    this.setStatus("live");
+    this.setStatus(classifierReady || landmarksReady ? "live" : "unavailable");
     this.emitView();
   }
 

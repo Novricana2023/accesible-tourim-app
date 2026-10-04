@@ -19,12 +19,14 @@ function providerWith(
     inferCount?: { value: number };
     disposed?: { value: boolean };
     configureInputSize?: (size: 320 | 416 | 640) => void;
+    variableInputSize?: boolean;
     fail?: boolean | (() => boolean);
   } = {},
 ): DetectionProvider {
   return {
     id: "scripted-test",
     inputSize: 640,
+    variableInputSize: extras.variableInputSize ?? false,
     labels: detections.map((item) => item.label),
     async load() {
       return { backend: "wasm" };
@@ -66,6 +68,7 @@ function mockCamera(onSubscribe: (cb: (frame: CameraFrame) => Promise<void>) => 
       };
     },
     setSubscriberFps: vi.fn(),
+    setCaptureBudget: vi.fn(),
     wasUnsubscribed: () => unsubscribed,
   } as unknown as CameraService & { wasUnsubscribed: () => boolean };
 }
@@ -208,7 +211,7 @@ describe("PerceptionRuntime", () => {
     await runtime.stop();
   });
 
-  it("starts at 416 on a mobile balanced profile without inventing detections", async () => {
+  it("starts at 416 capture budget on mobile balanced without changing fixed ONNX input", async () => {
     const sizes: Array<320 | 416 | 640> = [];
     const camera = mockCamera(() => {
       /* no frames */
@@ -226,7 +229,8 @@ describe("PerceptionRuntime", () => {
 
     await runtime.start(camera, "wasm", { deviceClass: "mobile", profile: "balanced" });
     expect(runtime.getLoopState().inputSize).toBe(416);
-    expect(sizes).toContain(416);
+    expect(sizes).toEqual([]);
+    expect(camera.setCaptureBudget).toHaveBeenCalledWith("perception", 416);
     await runtime.stop();
   });
 
@@ -257,7 +261,8 @@ describe("PerceptionRuntime", () => {
     await deliver(frame(1));
     now = 5100;
     await deliver(frame(2));
-    expect(sizes).toContain(416);
+    expect(sizes).toEqual([]);
+    expect(camera.setCaptureBudget).toHaveBeenCalledWith("perception", 416);
     expect(
       events.some(
         (event) =>

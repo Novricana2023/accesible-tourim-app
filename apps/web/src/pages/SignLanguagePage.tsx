@@ -94,7 +94,8 @@ export function SignLanguagePage() {
       {isAppleMobile() ? (
         <p className="text-base text-fg-muted" role="note">
           iPhone/iPad: use Safari or Chrome, tap <strong className="font-semibold text-fg">Test speaker</strong>{" "}
-          once so iOS allows spoken output. Sign recognition is slower than on Android or a laptop.
+          once so iOS allows spoken output. Partner speech-to-text is limited on iOS; use Android Chrome or a laptop
+          for reliable captions. Sign recognition is slower than on Android or a laptop.
         </p>
       ) : null}
       <details className="rounded-lg border border-border bg-surface-inset px-4 py-3">
@@ -137,18 +138,14 @@ export function SignLanguagePage() {
                   : "Hand tracking is starting. If this stays more than a minute, reload and check your connection."
                 : "Signer camera is off."}{" "}
               {signerLive
-                ? signView.classifierReady
-                  ? signView.reason?.includes("hand-shape assist")
-                    ? signView.reason
-                    : "Classifier loaded."
-                  : `No trained classifier. ${APP_NAME} will not guess signs.`
+                ? signAssistStatusLabel(signView)
                 : null}
             </p>
 
             {signerLive ? (
               <>
                 <p className="text-lg">{uncertaintyLabel}</p>
-                {signView.reason ? (
+                {signView.reason && !signView.reason.includes("Loading sign") ? (
                   <p className="text-base text-fg-muted">{signView.reason}</p>
                 ) : null}
               </>
@@ -326,12 +323,30 @@ function communicateStatus(signerLive: boolean, speakerListening: boolean): stri
   return "Communication mode is on. Start a channel below.";
 }
 
+function signAssistStatusLabel(view: SignViewState): string {
+  if (view.classifierId === "heuristic-isolated-sign") {
+    return (
+      view.reason ??
+      "Basic hand-shape assist is active (no trained ASL ONNX on server). Use Speak buttons if signs are not recognized."
+    );
+  }
+  if (view.classifierReady) {
+    return view.landmarksReady
+      ? "Hand tracking and sign assist are ready."
+      : "Sign assist is ready. Hand tracking is still starting.";
+  }
+  if (view.landmarksReady) {
+    return "Hand tracking is on. No trained classifier for this pack — use Speak below.";
+  }
+  return "Starting sign assist. If this fails, open Settings with ?debug=1 and check model URLs.";
+}
+
 function uncertaintyText(
   uncertainty: SignViewState["uncertainty"],
   gloss: string | null,
 ): string {
   if (uncertainty === "pack-not-loaded") {
-    return `Classifier unavailable. Vocabulary is listed; ${APP_NAME} will not invent glosses.`;
+    return `Sign classifier unavailable for this pack. Use Speak buttons for vocabulary words.`;
   }
   if (uncertainty === "uncertain" && gloss) {
     return `Uncertain: did you sign ${gloss}? ${APP_NAME} will not speak a guess.`;

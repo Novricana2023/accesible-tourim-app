@@ -71,7 +71,15 @@ export class OnnxSignClassifier implements SignClassifier {
         reason: `Sign classifier labels are missing. ${APP_NAME} will not guess signs.`,
       };
     }
-    const parsed = (await labelsResponse.json()) as unknown;
+    let parsed: unknown;
+    try {
+      parsed = await labelsResponse.json();
+    } catch {
+      return {
+        ok: false,
+        reason: CLASSIFIER_MISSING_REASON,
+      };
+    }
     if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string")) {
       return {
         ok: false,

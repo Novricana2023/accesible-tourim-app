@@ -28,6 +28,12 @@ function codeFromName(name: string): CameraErrorCode {
   if (name === "OverconstrainedError" || name === "ConstraintNotSatisfiedError") {
     return "overconstrained";
   }
+  if (name === "NotReadableError" || name === "TrackStartError") {
+    return "in-use";
+  }
+  if (name === "AbortError") {
+    return "aborted";
+  }
   if (name === "InsecureContext") {
     return "insecure";
   }
@@ -70,6 +76,24 @@ export function messageFor(code: CameraErrorCode): CameraError {
         code,
         message: "The camera stopped unexpectedly.",
         recovery: "Start again, or choose another camera.",
+      };
+    case "in-use":
+      return {
+        code,
+        message: "The camera is in use by another app or tab.",
+        recovery: "Close other apps using the camera, then start again.",
+      };
+    case "aborted":
+      return {
+        code,
+        message: "The camera request was interrupted.",
+        recovery: "Start the camera again.",
+      };
+    case "unsupported-api":
+      return {
+        code,
+        message: "This browser does not expose camera access.",
+        recovery: "Use Chrome or Safari on HTTPS, then try again.",
       };
     default:
       return {

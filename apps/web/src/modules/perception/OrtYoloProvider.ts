@@ -9,6 +9,7 @@ import type { DetectionOut } from "./detectionMessages";
 
 export class OrtYoloProvider implements DetectionProvider {
   readonly id: string;
+  readonly variableInputSize = false;
   inputSize: 320 | 416 | 640;
   readonly labels: readonly string[];
   private readonly options: DetectionProviderOptions;

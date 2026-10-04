@@ -30,8 +30,61 @@ function defaultCreateVideo(): HTMLVideoElement {
   video.autoplay = true;
   video.playsInline = true;
   video.setAttribute("playsinline", "");
+  video.setAttribute("webkit-playsinline", "");
   video.setAttribute("muted", "");
   return video;
+}
+
+function mountCaptureVideo(video: HTMLVideoElement): void {
+  if (typeof document === "undefined" || video.isConnected) {
+    return;
+  }
+  if (!video.style) {
+    return;
+  }
+  video.style.position = "fixed";
+  video.style.left = "-9999px";
+  video.style.top = "0";
+  video.style.width = "1px";
+  video.style.height = "1px";
+  video.style.opacity = "0";
+  video.style.pointerEvents = "none";
+  if (document.body) {
+    document.body.appendChild(video);
+  }
+}
+
+async function waitForVideoMetadata(video: HTMLVideoElement): Promise<void> {
+  if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+    return;
+  }
+  if (typeof video.addEventListener !== "function") {
+    return;
+  }
+  await new Promise<void>((resolve) => {
+    const done = () => {
+      video.removeEventListener("loadedmetadata", done);
+      resolve();
+    };
+    video.addEventListener("loadedmetadata", done);
+    window.setTimeout(done, 4000);
+  });
+}
+
+async function waitForVideoDimensions(
+  video: HTMLVideoElement,
+  timeoutMs: number,
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
+      return true;
+    }
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 40);
+    });
+  }
+  return video.videoWidth > 0 && video.videoHeight > 0;
 }
 
 function defaultVisibility(): VisibilitySource {
@@ -112,7 +165,14 @@ export class CameraService {
     });
     this.getUserMediaFn =
       deps.getUserMedia ??
-      ((constraints) => navigator.mediaDevices.getUserMedia(constraints));
+      ((constraints) => {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw Object.assign(new Error(messageFor("unsupported-api").message), {
+            name: "NotSupportedError",
+          });
+        }
+        return navigator.mediaDevices.getUserMedia(constraints);
+      });
     this.enumerateDevicesFn =
       deps.enumerateDevices ?? (() => navigator.mediaDevices.enumerateDevices());
     this.createVideoFn = deps.createVideo ?? defaultCreateVideo;
@@ -202,13 +262,35 @@ export class CameraService {
     this.bus.setSubscriberFps(consumerId, fps);
   }
 
+  /** True when the capture video has non-zero dimensions and an active video track. */
+  isCaptureReady(): boolean {
+    if (this.status !== "live" || !this.video) {
+      return false;
+    }
+    if (this.video.videoWidth <= 0 || this.video.videoHeight <= 0) {
+      return false;
+    }
+    const track = this.stream?.getVideoTracks()[0];
+    return Boolean(track && track.readyState === "live" && track.enabled);
+  }
+
+  async waitUntilCaptureReady(timeoutMs = 8000): Promise<boolean> {
+    if (this.status !== "live" || !this.video) {
+      return false;
+    }
+    if (this.isCaptureReady()) {
+      return true;
+    }
+    await waitForVideoDimensions(this.video, timeoutMs);
+    return this.isCaptureReady();
+  }
+
   async request(options: CameraRequestOptions): Promise<void> {
     if (!this.isSecureContextFn()) {
       const error = messageFor("insecure");
       this.setStatus("denied", error);
       throw Object.assign(new Error(error.message), { name: "InsecureContext" });
     }
-
     const generation = ++this.requestGeneration;
     this.stopCaptureLoop();
     this.releaseStream();
@@ -228,6 +310,9 @@ export class CameraService {
       if (generation !== this.requestGeneration) {
         this.releaseStream();
         return;
+      }
+      if (this.video) {
+        await waitForVideoDimensions(this.video, 8000);
       }
 
       this.devices = await this.refreshDevices();
@@ -349,12 +434,14 @@ export class CameraService {
     if (!this.video) {
       this.video = this.createVideoFn();
     }
+    mountCaptureVideo(this.video);
     this.video.srcObject = stream;
     this.video.muted = true;
+    await waitForVideoMetadata(this.video);
     try {
       await this.video.play();
     } catch {
-      /* autoplay can fail if the element is not in the document; preview play() retries */
+      /* preview play() retries when visible */
     }
   }
 
@@ -387,6 +474,10 @@ export class CameraService {
     }
     if (this.video) {
       this.video.srcObject = null;
+      if (typeof this.video.remove === "function") {
+        this.video.remove();
+      }
+      this.video = null;
     }
   }
 

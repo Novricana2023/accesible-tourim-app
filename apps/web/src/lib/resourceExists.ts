@@ -1,3 +1,13 @@
+import { isLikelyStaticAssetResponse } from "./assetResponse";
+import { publicAssetUrl } from "./publicAssetUrl";
+
+function resolveAssetUrl(url: string): string {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  return publicAssetUrl(url);
+}
+
 async function existsInCaches(url: string): Promise<boolean> {
   if (typeof caches === "undefined") {
     return false;
@@ -52,14 +62,16 @@ export async function fetchCachedFirst(url: string): Promise<Response | null> {
  * as soon as headers arrive.
  */
 export async function resourceExists(url: string): Promise<boolean> {
+  const resolved = resolveAssetUrl(url);
   if (typeof navigator !== "undefined" && !navigator.onLine) {
-    if (await existsInCaches(url)) {
+    if (await existsInCaches(resolved)) {
       return true;
     }
   }
 
-  try {    const head = await fetch(url, { method: "HEAD" });
-    if (head.ok) {
+  try {
+    const head = await fetch(resolved, { method: "HEAD" });
+    if (isLikelyStaticAssetResponse(head, resolved)) {
       return true;
     }
   } catch {
@@ -67,15 +79,12 @@ export async function resourceExists(url: string): Promise<boolean> {
   }
 
   try {
-    const ranged = await fetch(url, {
+    const ranged = await fetch(resolved, {
       method: "GET",
       headers: { Range: "bytes=0-0" },
     });
     await ranged.body?.cancel().catch(() => undefined);
-    if (ranged.ok || ranged.status === 206) {
-      return true;
-    }
-    if (ranged.status === 416) {
+    if (isLikelyStaticAssetResponse(ranged, resolved)) {
       return true;
     }
   } catch {
@@ -83,9 +92,9 @@ export async function resourceExists(url: string): Promise<boolean> {
   }
 
   try {
-    const get = await fetch(url, { method: "GET" });
+    const get = await fetch(resolved, { method: "GET" });
     await get.body?.cancel().catch(() => undefined);
-    return get.ok;
+    return isLikelyStaticAssetResponse(get, resolved);
   } catch {
     return false;
   }

@@ -4,6 +4,7 @@ import * as Switch from "@radix-ui/react-switch";
 import type { SignLanguagePackId, SpeechRequest, UserPrefs } from "@mara/shared";
 import { MAX_DETECTION_SENSITIVITY, SUPPORTED_SPEECH_IN_LOCALES } from "@mara/shared";
 import { CapabilityList } from "@/components/CapabilityList";
+import { DiagnosticsPanel } from "@/components/DiagnosticsPanel";
 import { PageBackLink } from "@/components/layout/PageBackLink";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -483,6 +484,7 @@ export function SettingsPage() {
       </form>
 
       <CapabilityList report={capabilities} heading="Device capabilities" />
+      <DiagnosticsPanel />
     </div>
   );
 }

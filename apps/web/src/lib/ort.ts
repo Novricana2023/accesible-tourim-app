@@ -1,6 +1,6 @@
+import { publicAssetUrl } from "./publicAssetUrl";
+
 export function defaultOrtWasmPaths(): string {
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}/ort/`;
-  }
-  return "/ort/";
+  const base = publicAssetUrl("ort/");
+  return base.endsWith("/") ? base : `${base}/`;
 }

@@ -172,6 +172,37 @@ if (!(await fileExists(handTask)) || (await fileSize(handTask)) < 100_000) {
   console.log("hand_landmarker.task is already present.");
 }
 
+const required = [
+  { path: target, minBytes: 1_000_000, label: manifest.file },
+  { path: handTask, minBytes: 100_000, label: "hand_landmarker.task" },
+];
+const ortFiles = await readdir(ortDest).catch(() => []);
+if (ortFiles.filter((name) => name.endsWith(".wasm")).length === 0) {
+  throw new Error(
+    "ONNX Runtime WASM files are missing from public/ort. Run npm install, then npm run models.",
+  );
+}
+const mpFiles = await readdir(mediapipeWasmDest).catch(() => []);
+if (mpFiles.length === 0) {
+  throw new Error(
+    "MediaPipe WASM files are missing from public/mediapipe/wasm. Run npm install, then npm run models.",
+  );
+}
+
+const missing = [];
+for (const item of required) {
+  const size = await fileSize(item.path);
+  if (size < item.minBytes) {
+    missing.push(`${item.label} (${item.path}, ${size} bytes)`);
+  }
+}
+if (missing.length > 0) {
+  throw new Error(
+    `Production AI assets are incomplete:\n${missing.map((line) => `- ${line}`).join("\n")}\nFix network access for downloads, then rerun npm run models.`,
+  );
+}
+console.log("Required on-device AI assets verified.");
+
 async function download(url, dest) {
   const response = await fetch(url);
   if (!response.ok || !response.body) {

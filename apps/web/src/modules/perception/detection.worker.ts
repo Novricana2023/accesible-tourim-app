@@ -5,7 +5,8 @@ import { decodeYoloOutput, type LetterboxMeta } from "./yoloPostprocess";
 
 let session: ort.InferenceSession | null = null;
 let backend: "webgpu" | "wasm" = "wasm";
-let inputSize: 320 | 416 | 640 = 640;
+/** Spatial size the loaded ONNX graph expects (fixed at export time). */
+let modelInputSize = 640;
 let inputName = "images";
 let labels: string[] = [];
 let scoreThreshold = 0.45;
@@ -22,9 +23,6 @@ async function handle(message: DetectionIn): Promise<void> {
       return;
     }
     if (message.type === "configure") {
-      if (message.inputSize !== undefined) {
-        inputSize = message.inputSize;
-      }
       if (message.scoreThreshold !== undefined) {
         scoreThreshold = message.scoreThreshold;
       }
@@ -54,9 +52,27 @@ async function handle(message: DetectionIn): Promise<void> {
   }
 }
 
+function resolveSessionInputSize(
+  activeSession: ort.InferenceSession,
+  name: string,
+  fallback: number,
+): number {
+  const meta = activeSession as ort.InferenceSession & {
+    inputMetadata?: Record<string, { dimensions?: Array<number | string> }>;
+  };
+  const dims = meta.inputMetadata?.[name]?.dimensions;
+  if (dims && dims.length >= 4) {
+    const height = dims[2];
+    const width = dims[3];
+    if (typeof height === "number" && typeof width === "number" && height === width && height > 0) {
+      return height;
+    }
+  }
+  return fallback;
+}
+
 async function init(message: Extract<DetectionIn, { type: "init" }>): Promise<void> {
   labels = message.labels;
-  inputSize = message.inputSize;
   scoreThreshold = message.scoreThreshold;
   ort.env.wasm.wasmPaths = message.wasmPaths;
   ort.env.wasm.numThreads = 1;
@@ -86,6 +102,7 @@ async function init(message: Extract<DetectionIn, { type: "init" }>): Promise<vo
       });
       backend = provider;
       inputName = session.inputNames[0] ?? "images";
+      modelInputSize = resolveSessionInputSize(session, inputName, message.inputSize);
       post({ type: "ready", backend });
       return;
     } catch (error) {
@@ -111,7 +128,7 @@ async function inferFrame(
   }
 
   const started = performance.now();
-  const { tensor, letterbox } = bitmapToTensor(message.bitmap, inputSize);
+  const { tensor, letterbox } = bitmapToTensor(message.bitmap, modelInputSize);
   let outputs: Record<string, ort.Tensor> | null = null;
   try {
     outputs = await session.run({ [inputName]: tensor });

@@ -1,6 +1,7 @@
 import type { CameraFrame } from "@mara/shared";
 import type { CameraService } from "@/modules/camera/CameraService";
 import type { LandmarkOut } from "./landmarkMessages";
+import { publicAssetUrl } from "@/lib/publicAssetUrl";
 import {
   HAND_LANDMARKER_TASK,
   MEDIAPIPE_WASM_DIR,
@@ -13,17 +14,12 @@ const CONSUMER_ID = "sign-language";
 const DEFAULT_FPS = 16;
 
 function wasmPath(): string {
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}${MEDIAPIPE_WASM_DIR}`;
-  }
-  return MEDIAPIPE_WASM_DIR;
+  const base = publicAssetUrl(MEDIAPIPE_WASM_DIR);
+  return base.endsWith("/") ? base : `${base}/`;
 }
 
 function modelUrl(): string {
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}${HAND_LANDMARKER_TASK}`;
-  }
-  return HAND_LANDMARKER_TASK;
+  return publicAssetUrl(HAND_LANDMARKER_TASK);
 }
 
 export class MediaPipeLandmarkExtractor implements LandmarkExtractor {

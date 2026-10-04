@@ -288,7 +288,9 @@ export class SttAdapter {
       this.recognition.start();
       this.setStatus("listening");
     } catch {
-      this.setStatus("listening");
+      this.wanted = false;
+      this.tearDownRecognition();
+      this.setStatus("unavailable");
     }
   }
 

@@ -26,6 +26,27 @@ function speechAvailable(): boolean {
 
 const SPEAK_AFTER_CANCEL_MS = 50;
 
+function ensureSpeechVoicesLoaded(): Promise<void> {
+  if (!speechAvailable()) {
+    return Promise.resolve();
+  }
+  const synth = window.speechSynthesis;
+  if (typeof synth.getVoices !== "function") {
+    return Promise.resolve();
+  }
+  if (synth.getVoices().length > 0) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const finish = (): void => {
+      synth.removeEventListener("voiceschanged", finish);
+      resolve();
+    };
+    synth.addEventListener("voiceschanged", finish);
+    window.setTimeout(finish, 600);
+  });
+}
+
 export class TtsAdapter implements SpeechOutput {
   private rate = 1;
   private volume = 1;
@@ -68,7 +89,7 @@ export class TtsAdapter implements SpeechOutput {
     } catch {
       /* some browsers omit resume */
     }
-    void window.speechSynthesis.getVoices();
+    void ensureSpeechVoicesLoaded();
     const utterance = new SpeechSynthesisUtterance("\u200b");
     utterance.volume = 0.01;
     utterance.rate = 2;
@@ -118,16 +139,34 @@ export class TtsAdapter implements SpeechOutput {
       }
       this.pendingAfterCancel = false;
       this.speakTimer = null;
+      if (!this.voice && typeof window.speechSynthesis.getVoices === "function") {
+        const voices = window.speechSynthesis.getVoices();
+        this.voice = voices[0] ?? null;
+        if (this.voice) {
+          utterance.voice = this.voice;
+        }
+      }
       window.speechSynthesis.speak(utterance);
+    };
+
+    const queueStart = (): void => {
+      void ensureSpeechVoicesLoaded().then(() => {
+        if (this.pendingAfterCancel) {
+          this.clearSpeakTimer();
+          this.speakTimer = setTimeout(start, SPEAK_AFTER_CANCEL_MS);
+          return;
+        }
+        start();
+      });
     };
 
     if (this.pendingAfterCancel) {
       this.clearSpeakTimer();
-      this.speakTimer = setTimeout(start, SPEAK_AFTER_CANCEL_MS);
+      this.speakTimer = setTimeout(queueStart, SPEAK_AFTER_CANCEL_MS);
       return;
     }
 
-    start();
+    queueStart();
   }
 
   cancel(): void {
