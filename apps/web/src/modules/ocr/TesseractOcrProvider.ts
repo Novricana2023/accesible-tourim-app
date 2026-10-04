@@ -1,6 +1,12 @@
 import type { CameraFrame } from "@mara/shared";
+import { publicAssetUrl } from "@/lib/publicAssetUrl";
 import type { OcrBox } from "./ocrGeometry";
 import type { OcrOut } from "./ocrMessages";
+import {
+  resolveTesseractCorePath,
+  resolveTesseractLangGzip,
+  TESSERACT_WORKER_PATH,
+} from "./ocrAssets";
 
 export interface OcrRecognizeResult {
   regions: OcrBox[];
@@ -15,15 +21,21 @@ export interface OcrProvider {
   dispose(): Promise<void>;
 }
 
-export function tesseractAssetUrls(origin = defaultOrigin()): {
+export function tesseractAssetUrls(
+  origin = defaultOrigin(),
+  coreFile = "tesseract-core-simd-lstm.wasm.js",
+): {
   workerPath: string;
   corePath: string;
   langPath: string;
 } {
+  const base = origin || (typeof window !== "undefined" ? window.location.origin : "");
   return {
-    workerPath: `${origin}/tesseract/worker.min.js`,
-    corePath: `${origin}/tesseract/tesseract-core-simd-lstm.wasm.js`,
-    langPath: `${origin}/tesseract/lang`,
+    workerPath: base ? `${base}${TESSERACT_WORKER_PATH}` : publicAssetUrl(TESSERACT_WORKER_PATH),
+    corePath: base
+      ? `${base}/tesseract/${coreFile}`
+      : publicAssetUrl(`/tesseract/${coreFile}`),
+    langPath: base ? `${base}/tesseract/lang` : publicAssetUrl("/tesseract/lang"),
   };
 }
 
@@ -107,7 +119,18 @@ export class TesseractOcrProvider implements OcrProvider {
   ): Promise<{ engine: "tesseract"; language: string }> {
     this.worker = this.createWorkerFn();
     this.worker.addEventListener("message", this.onMessage);
-    const assets = tesseractAssetUrls();
+    const corePath = await resolveTesseractCorePath();
+    if (!corePath) {
+      throw new Error(
+        "Tesseract core files are missing. Redeploy with npm run build:production.",
+      );
+    }
+    const coreFile = corePath.split("/").pop() ?? "tesseract-core-simd-lstm.wasm.js";
+    const assets = tesseractAssetUrls(undefined, coreFile);
+    assets.corePath = corePath;
+    assets.workerPath = publicAssetUrl(TESSERACT_WORKER_PATH);
+    assets.langPath = publicAssetUrl("/tesseract/lang");
+    const gzip = await resolveTesseractLangGzip();
     const lang = language.toLowerCase().startsWith("en") ? "eng" : "eng";
     return new Promise((resolve, reject) => {
       const onReady = (event: MessageEvent<OcrOut>) => {
@@ -128,7 +151,7 @@ export class TesseractOcrProvider implements OcrProvider {
         workerPath: assets.workerPath,
         corePath: assets.corePath,
         langPath: assets.langPath,
-        gzip: true,
+        gzip,
       });
     });
   }

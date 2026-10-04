@@ -172,10 +172,23 @@ if (!(await fileExists(handTask)) || (await fileSize(handTask)) < 100_000) {
   console.log("hand_landmarker.task is already present.");
 }
 
+const tessWorker = path.join(tessDest, "worker.min.js");
 const required = [
   { path: target, minBytes: 1_000_000, label: manifest.file },
   { path: handTask, minBytes: 100_000, label: "hand_landmarker.task" },
+  { path: tessWorker, minBytes: 1_000, label: "tesseract worker.min.js" },
+  { path: trainedData, minBytes: 100_000, label: "eng.traineddata" },
 ];
+const tessCoreFiles = await readdir(tessDest).catch(() => []);
+if (
+  !tessCoreFiles.some(
+    (name) => name.startsWith("tesseract-core") && name.endsWith(".wasm.js"),
+  )
+) {
+  throw new Error(
+    "Tesseract core WASM/JS files are missing from public/tesseract. Run npm install, then npm run models.",
+  );
+}
 const ortFiles = await readdir(ortDest).catch(() => []);
 if (ortFiles.filter((name) => name.endsWith(".wasm")).length === 0) {
   throw new Error(
