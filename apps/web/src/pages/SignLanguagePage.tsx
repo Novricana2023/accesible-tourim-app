@@ -58,7 +58,7 @@ export function SignLanguagePage() {
   const packLabel = packId.toUpperCase();
   const vocabulary =
     signView.vocabulary.length > 0 ? signView.vocabulary : listVocabulary(packId);
-  const uncertaintyLabel = uncertaintyText(signView.uncertainty, signView.lastGloss);
+  const uncertaintyLabel = uncertaintyText(signView);
   const speakerCaption =
     communication.speakerLiveText || communication.lastSpeakerText;
   const signerPhrase = signView.lastSpokenText || communication.lastSignerText;
@@ -130,23 +130,18 @@ export function SignLanguagePage() {
             ) : null}
 
             <p className="text-lg" role="status">
-              {signerLive
-                ? signView.landmarksReady
-                  ? signView.handsDetected > 0
-                    ? `Hand tracking is on. Hands in frame: ${signView.handsDetected}.`
-                    : "Hand tracking is on. Show your hands to the front camera, or tap Speak below."
-                  : "Hand tracking is starting. If this stays more than a minute, reload and check your connection."
-                : "Signer camera is off."}{" "}
-              {signerLive
-                ? signAssistStatusLabel(signView)
-                : null}
+              {signerLive ? handTrackingStatus(signView) : "Signer camera is off."}
             </p>
 
             {signerLive ? (
               <>
                 <p className="text-lg">{uncertaintyLabel}</p>
-                {signView.reason && !signView.reason.includes("Loading sign") ? (
-                  <p className="text-base text-fg-muted">{signView.reason}</p>
+                {signView.classifierId === "heuristic-isolated-sign" ? (
+                  <p className="text-base text-fg-muted" role="note">
+                    Full ASL model weights are not on the server. This mode only detects a few
+                    hand shapes (HELLO, HELP, etc.). Tap <strong className="font-semibold text-fg">Speak</strong>{" "}
+                    under any word to say it aloud without recognition.
+                  </p>
                 ) : null}
               </>
             ) : null}
@@ -323,36 +318,35 @@ function communicateStatus(signerLive: boolean, speakerListening: boolean): stri
   return "Communication mode is on. Start a channel below.";
 }
 
-function signAssistStatusLabel(view: SignViewState): string {
-  if (view.classifierId === "heuristic-isolated-sign") {
-    return (
-      view.reason ??
-      "Basic hand-shape assist is active (no trained ASL ONNX on server). Use Speak buttons if signs are not recognized."
-    );
-  }
-  if (view.classifierReady) {
-    return view.landmarksReady
-      ? "Hand tracking and sign assist are ready."
-      : "Sign assist is ready. Hand tracking is still starting.";
+function handTrackingStatus(view: SignViewState): string {
+  if (view.landmarksReady && view.handsDetected > 0) {
+    return `Hand tracking is on. Hands in frame: ${view.handsDetected}. Hold a sign steady for about one second.`;
   }
   if (view.landmarksReady) {
-    return "Hand tracking is on. No trained classifier for this pack — use Speak below.";
+    return "Hand tracking is on. Show both hands to the front camera in good light, or tap Speak below.";
   }
-  return "Starting sign assist. If this fails, open Settings with ?debug=1 and check model URLs.";
+  if (view.reason?.includes("MediaPipe") || view.reason?.includes("Hand tracking")) {
+    return `${view.reason} Tap Speak below to say words without tracking.`;
+  }
+  return "Hand tracking is loading MediaPipe (needs network once). If this lasts over a minute, reload or check Settings ?debug=1 for handTaskUrl.";
 }
 
-function uncertaintyText(
-  uncertainty: SignViewState["uncertainty"],
-  gloss: string | null,
-): string {
+function uncertaintyText(view: SignViewState): string {
+  const { uncertainty, lastGloss: gloss, handsDetected, landmarksReady } = view;
   if (uncertainty === "pack-not-loaded") {
     return `Sign classifier unavailable for this pack. Use Speak buttons for vocabulary words.`;
   }
   if (uncertainty === "uncertain" && gloss) {
-    return `Uncertain: did you sign ${gloss}? ${APP_NAME} will not speak a guess.`;
+    return `Uncertain: did you sign ${gloss}? ${APP_NAME} will not speak a guess. Tap Speak if you want to say it.`;
   }
   if (uncertainty === "not-recognized") {
-    return "Not recognized.";
+    if (!landmarksReady) {
+      return "Signs cannot be detected until hand tracking starts. Use Speak buttons meanwhile.";
+    }
+    if (handsDetected > 0) {
+      return "Hands seen. Try open palm (HELLO) or fist on flat palm with two hands (HELP), hold still, or tap Speak.";
+    }
+    return "No hands detected yet. Move closer to the front camera or tap Speak below.";
   }
   if (gloss) {
     return `Recognized ${gloss}.`;

@@ -14,7 +14,7 @@ export class HeuristicSignClassifier implements SignClassifier {
       return null;
     }
 
-    const MIN = 0.55;
+    const MIN = 0.5;
     const candidates: SignClassifierResult[] = [];
 
     if (frame.hands.length >= 2) {
