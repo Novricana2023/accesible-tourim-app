@@ -6,6 +6,7 @@ import { appDocumentTitle } from "@/app/brand";
 import { useMara } from "@/app/runtime";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import { navigateAvailability } from "@/lib/featureAvailability";
+import { PATH_ASSISTANCE_DISCLAIMER } from "@/modules/navigation/types";
 
 export function NavigatePage() {
   const {
@@ -20,30 +21,36 @@ export function NavigatePage() {
     pathObstacles,
     pathInstruction,
     perceptionUnavailableReason,
+    visionLoop,
     startNavigation,
     stopNavigation,
     stop,
   } = useMara();
-  useDocumentTitle(appDocumentTitle("Navigate"));
+  useDocumentTitle(appDocumentTitle("Navigation & vision"));
 
   const navigationRunning = navigationStatus === "live";
-  const visionOn =
+  const perceptionOn =
     mode === "assist" &&
     (perceptionStatus === "live" ||
       perceptionStatus === "paused" ||
       perceptionStatus === "loading");
-  const availability = navigateAvailability({ capabilities, navigationStatus });
-  const uiStatus = navigationRunning ? "active" : availability.status;
+  const availability = navigateAvailability({
+    capabilities,
+    mode,
+    navigationStatus,
+    perceptionStatus,
+  });
+  const uiStatus = navigationRunning || perceptionOn ? "active" : availability.status;
 
   return (
     <ModeScreen
-      title="Navigate"
-      subtitle="Camera path assistance from object detection. This is not collision avoidance and does not use GPS turn-by-turn routing."
+      title="Navigation & vision assistance"
+      subtitle={PATH_ASSISTANCE_DISCLAIMER}
       status={uiStatus}
-      statusText={navStatusText(navigationRunning, pathInstruction, visionOn)}
+      statusText={navStatusText(navigationRunning, pathInstruction, perceptionOn)}
       actions={
         <div className="flex flex-col gap-3">
-          {navigationRunning ? (
+          {navigationRunning || perceptionOn ? (
             <>
               <Button
                 variant="danger"
@@ -79,14 +86,16 @@ export function NavigatePage() {
         </div>
       }
     >
-      {navigationRunning ? (
+      {navigationRunning || perceptionOn ? (
         <>
-          <PathAssistanceDisplay
-            status={navigationStatus}
-            obstacles={pathObstacles}
-            lastInstruction={pathInstruction}
-          />
-          {visionOn ? (
+          {navigationRunning ? (
+            <PathAssistanceDisplay
+              status={navigationStatus}
+              obstacles={pathObstacles}
+              lastInstruction={pathInstruction}
+            />
+          ) : null}
+          {perceptionOn ? (
             <CameraPreview
               service={camera}
               visualOverlay={prefs.visualOverlay}
@@ -95,19 +104,19 @@ export function NavigatePage() {
               detection={detection}
               perceptionStatus={perceptionStatus}
               perceptionUnavailableReason={perceptionUnavailableReason}
+              visionLoop={visionLoop}
               userFriendly
             />
           ) : (
             <p className="text-lg text-fg-muted" role="status">
-              Path assistance needs continuous vision. Start navigation from home if vision
-              did not start automatically.
+              Waiting for the camera and object detection to start.
             </p>
           )}
         </>
       ) : (
         <p className="text-lg text-fg-muted">
-          Start navigation to enable path assistance. Continuous vision will start if it is
-          not already running.
+          Start navigation to open the rear camera, detect objects in view, and hear prioritized
+          guidance about people, obstacles, and other items the model can reliably see.
         </p>
       )}
     </ModeScreen>
@@ -117,16 +126,19 @@ export function NavigatePage() {
 function navStatusText(
   navigationRunning: boolean,
   lastInstruction: string,
-  visionOn: boolean,
+  perceptionOn: boolean,
 ): string {
-  if (!navigationRunning) {
-    return "Navigation assistance is off.";
+  if (!navigationRunning && !perceptionOn) {
+    return "Navigation and vision assistance is off.";
   }
   if (lastInstruction) {
     return lastInstruction;
   }
-  if (!visionOn) {
-    return "Path assistance is on, waiting for continuous vision.";
+  if (!perceptionOn) {
+    return "Starting camera and object detection.";
   }
-  return "Path assistance is on. Listening for obstacles ahead.";
+  if (!navigationRunning) {
+    return "Object detection is running. Starting path guidance.";
+  }
+  return "Listening for obstacles and important objects ahead.";
 }

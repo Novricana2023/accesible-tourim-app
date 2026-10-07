@@ -46,8 +46,7 @@ async function handle(message: LandmarkIn): Promise<void> {
 async function init(message: Extract<LandmarkIn, { type: "init" }>): Promise<void> {
   const vision = await import("@mediapipe/tasks-vision");
   const fileset = await vision.FilesetResolver.forVisionTasks(message.wasmPath);
-  // CPU first: more reliable on Android Chrome than GPU delegate for IMAGE mode.
-  const delegates = ["CPU", "GPU"] as const;
+  const delegates = ["GPU", "CPU"] as const;
   let lastError: unknown;
   for (const delegate of delegates) {
     try {

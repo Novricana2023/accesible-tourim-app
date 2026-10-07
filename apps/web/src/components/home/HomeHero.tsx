@@ -29,8 +29,8 @@ export function HomeHero() {
           {APP_NAME}
         </h1>
         <p className="mt-2 max-w-prose text-base leading-relaxed text-fg-muted sm:text-lg">
-          Vision, reading, path assistance, and sign-language support powered by AI on your
-          phone. Built for accessible tourism.
+          Navigation and vision assistance, reading, and sign-language support powered by AI on
+          your phone. Built for accessible travel.
         </p>
       </div>
     </section>

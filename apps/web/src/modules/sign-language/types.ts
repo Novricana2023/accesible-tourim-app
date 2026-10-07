@@ -63,7 +63,7 @@ export const SEQUENCE_FRAMES = 24;
 export const CLASSIFY_EVERY = 2;
 
 export const CLASSIFIER_MISSING_REASON =
-  `Sign-language pack is not loaded. No trained classifier weights were found. ${APP_NAME} will not guess signs.`;
+  `The optional ONNX sign classifier is not installed on this server. ${APP_NAME} uses hand-shape detection for a small vocabulary only and will not guess signs.`;
 
 export const LANDMARKS_MISSING_REASON =
   `Hand tracking is unavailable. MediaPipe assets failed to load. ${APP_NAME} will not guess signs.`;

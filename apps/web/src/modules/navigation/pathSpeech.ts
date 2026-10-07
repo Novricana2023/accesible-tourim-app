@@ -1,5 +1,6 @@
-import type { SpeechRequest } from "@mara/shared";
+import type { DetectedObject, SpeechRank, SpeechRequest } from "@mara/shared";
 import { createId } from "@/lib/utils";
+import { formatDetectionUtterance } from "@/modules/speech/utterance";
 import type { PathObstacle, PathObstaclePriority } from "./types";
 import { normalizeNavLabel } from "./pathFilter";
 
@@ -34,18 +35,22 @@ export function spokenPathName(label: string): string {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
-export function formatPathUtterance(obstacle: PathObstacle): string {
-  const name = spokenPathName(obstacle.label);
-  const zone = obstacle.zone;
-  const depth = obstacle.depth;
+function pathObstacleAsDetection(obstacle: PathObstacle): DetectedObject {
+  return {
+    trackId: obstacle.trackId,
+    label: obstacle.label,
+    confidence: obstacle.confidence,
+    box: obstacle.box,
+    zone: obstacle.zone,
+    depth: obstacle.depth,
+    motion: obstacle.motion,
+    firstSeenMs: obstacle.firstSeenMs,
+    lastSeenMs: obstacle.lastSeenMs,
+  };
+}
 
-  if (obstacle.motion === "approaching") {
-    return `${name} approaching, ${zone}, ${depth}.`;
-  }
-  if (obstacle.motion === "crossing") {
-    return `${name} crossing, ${zone}, ${depth}.`;
-  }
-  return `${name}, ${zone}, ${depth}.`;
+export function formatPathUtterance(obstacle: PathObstacle): string {
+  return formatDetectionUtterance(pathObstacleAsDetection(obstacle));
 }
 
 export function utteranceContainsMeters(text: string): boolean {
@@ -100,7 +105,10 @@ export class PathSpeechPolicy {
     this.lastNavUtteranceMs = Number.NEGATIVE_INFINITY;
   }
 
-  requestFromObstacle(obstacle: PathObstacle, now: number): SpeechRequest | null {
+  private planObstacle(
+    obstacle: PathObstacle,
+    now: number,
+  ): { request: SpeechRequest; identity: string } | null {
     if (obstacle.lastSeenMs - obstacle.firstSeenMs < this.options.minHitsMs) {
       return null;
     }
@@ -116,44 +124,125 @@ export class PathSpeechPolicy {
       return null;
     }
 
-    if (now - this.lastNavUtteranceMs < this.options.rateLimitMs) {
-      return null;
-    }
-
     const text = formatPathUtterance(obstacle);
     if (utteranceContainsMeters(text)) {
       return null;
     }
 
+    const ranked = navPriority(obstacle);
+    return {
+      identity,
+      request: {
+        id: createId(),
+        priority: ranked.priority,
+        text,
+        interrupt: ranked.interrupt,
+        category: "nav",
+        dedupeKey: `nav:${identity}:${obstacle.depth}:${obstacle.motion}`,
+        cooldownMs: cooldown,
+        createdMs: now,
+        rank: ranked.rank,
+      },
+    };
+  }
+
+  private markObstacleSpoken(
+    identity: string,
+    obstacle: PathObstacle,
+    now: number,
+  ): void {
     this.lastSpoken.set(identity, {
       at: now,
       depth: obstacle.depth,
       motion: obstacle.motion,
     });
-    this.lastNavUtteranceMs = now;
+  }
 
-    const ranked = navPriority(obstacle);
-    return {
-      id: createId(),
-      priority: ranked.priority,
-      text,
-      interrupt: ranked.interrupt,
-      category: "nav",
-      dedupeKey: `nav:${identity}:${obstacle.depth}:${obstacle.motion}`,
-      cooldownMs: cooldown,
-      createdMs: now,
-      rank: ranked.rank,
-    };
+  requestFromObstacle(obstacle: PathObstacle, now: number): SpeechRequest | null {
+    if (now - this.lastNavUtteranceMs < this.options.rateLimitMs) {
+      return null;
+    }
+    const planned = this.planObstacle(obstacle, now);
+    if (!planned) {
+      return null;
+    }
+    this.markObstacleSpoken(planned.identity, obstacle, now);
+    this.lastNavUtteranceMs = now;
+    return planned.request;
   }
 
   /**
-   * Speak at most the highest-priority path obstacle. Never invents a "path is safe" line.
+   * Summarize up to three prioritized obstacles in one utterance when allowed.
+   * Never invents a "path is safe" line.
    */
   requestsFromObstacles(obstacles: PathObstacle[], now: number): SpeechRequest[] {
     if (obstacles.length === 0) {
       return [];
     }
-    const request = this.requestFromObstacle(obstacles[0], now);
-    return request ? [request] : [];
+    if (now - this.lastNavUtteranceMs < this.options.rateLimitMs) {
+      return [];
+    }
+
+    const phrases: string[] = [];
+    const seenPhrase = new Set<string>();
+    let bestRank: SpeechRank = 3;
+    let bestPriority: SpeechRequest["priority"] = 3;
+    let interrupt = false;
+    const dedupeParts: string[] = [];
+
+    for (const obstacle of obstacles.slice(0, 4)) {
+      if (phrases.length >= 3) {
+        break;
+      }
+      const planned = this.planObstacle(obstacle, now);
+      if (!planned) {
+        continue;
+      }
+      const { request } = planned;
+      const phrase = request.text.replace(/\.\s*$/, "").trim();
+      if (!phrase || seenPhrase.has(phrase)) {
+        continue;
+      }
+      seenPhrase.add(phrase);
+      phrases.push(phrase);
+      dedupeParts.push(request.dedupeKey ?? request.id);
+      this.markObstacleSpoken(planned.identity, obstacle, now);
+      const rank = request.rank ?? 3;
+      if (rank < bestRank) {
+        bestRank = rank;
+      }
+      if (request.priority < bestPriority) {
+        bestPriority = request.priority;
+      }
+      if (request.interrupt) {
+        interrupt = true;
+      }
+    }
+
+    if (phrases.length === 0) {
+      return [];
+    }
+
+    const text = `${phrases.join(". ")}.`;
+    if (utteranceContainsMeters(text)) {
+      return [];
+    }
+
+    this.lastNavUtteranceMs = now;
+
+    const ranked = navPriority(obstacles[0]);
+    return [
+      {
+        id: createId(),
+        priority: bestPriority,
+        text,
+        interrupt,
+        category: "nav",
+        dedupeKey: `nav:summary:${dedupeParts.join("|")}`,
+        cooldownMs: this.options.rateLimitMs,
+        createdMs: now,
+        rank: bestRank === 3 ? ranked.rank : bestRank,
+      },
+    ];
   }
 }

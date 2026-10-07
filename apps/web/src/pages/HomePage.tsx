@@ -7,7 +7,6 @@ import {
   navigateAvailability,
   readAvailability,
   signAvailability,
-  visionAvailability,
 } from "@/lib/featureAvailability";
 import { useNavigate } from "react-router-dom";
 
@@ -23,14 +22,12 @@ export function HomePage() {
     ocrAssetsReason,
     navigationStatus,
     signStatus,
-    startVision,
     startReading,
     startNavigation,
     startCommunicate,
   } = useMaraSession();
   useDocumentTitle(appDocumentTitle());
 
-  const vision = visionAvailability({ capabilities, mode, perceptionStatus });
   const read = readAvailability({
     capabilities,
     prefs,
@@ -38,7 +35,12 @@ export function HomePage() {
     ocrAssetsOk,
     ocrAssetsReason,
   });
-  const nav = navigateAvailability({ capabilities, navigationStatus });
+  const nav = navigateAvailability({
+    capabilities,
+    mode,
+    navigationStatus,
+    perceptionStatus,
+  });
   const sign = signAvailability({ capabilities, mode, signStatus });
 
   return (
@@ -59,19 +61,19 @@ export function HomePage() {
 
       <div className="grid gap-5 sm:grid-cols-2">
         <FeatureCard
-          title="Vision"
-          description="Continuous environmental assistance with the rear camera."
-          imageSrc="/features/vision.png"
-          imageAlt="Vision assistance"
-          availability={vision}
-          activeHint="Vision assistance is running."
-          startLabel="Start vision"
-          openLabel="Open vision"
+          title="Navigation & vision"
+          description="Rear camera, object detection, and spoken guidance for movement and safety."
+          imageSrc="/features/navigate.png"
+          imageAlt="Navigation and vision assistance"
+          availability={nav}
+          activeHint="Navigation and vision assistance is running."
+          startLabel="Start navigation"
+          openLabel="Open navigation"
           onStart={() => {
-            void startVision();
+            void startNavigation();
           }}
           onOpen={() => {
-            navigate("/vision");
+            navigate("/navigate");
           }}
         />
         <FeatureCard
@@ -88,22 +90,6 @@ export function HomePage() {
           }}
           onOpen={() => {
             navigate("/read");
-          }}
-        />
-        <FeatureCard
-          title="Navigate"
-          description="Environmental awareness while moving. Not turn-by-turn GPS."
-          imageSrc="/features/navigate.png"
-          imageAlt="Navigate with path assistance"
-          availability={nav}
-          activeHint="Path assistance is running."
-          startLabel="Start navigation"
-          openLabel="Open navigation"
-          onStart={() => {
-            void startNavigation();
-          }}
-          onOpen={() => {
-            navigate("/navigate");
           }}
         />
         <FeatureCard

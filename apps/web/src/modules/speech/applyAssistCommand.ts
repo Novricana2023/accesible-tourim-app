@@ -15,7 +15,7 @@ export function applyAssistCommand(
 ): void {
   switch (command.name) {
     case "start-vision":
-      actions.startVision();
+      actions.startNavigation();
       return;
     case "stop":
       actions.stop();
@@ -37,7 +37,7 @@ export function applyAssistCommand(
 
 export type AssistActivity =
   | "idle"
-  | "continuous vision"
+  | "navigation and vision"
   | "reading"
   | "both"
   | "communicate";
@@ -54,7 +54,7 @@ export function assistActivity(input: {
     return "both";
   }
   if (input.visionRunning) {
-    return "continuous vision";
+    return "navigation and vision";
   }
   if (input.readingRunning) {
     return "reading";
@@ -63,11 +63,11 @@ export function assistActivity(input: {
 }
 
 export function assistActivityLabel(activity: AssistActivity): string {
-  if (activity === "continuous vision") {
-    return "continuous vision";
+  if (activity === "navigation and vision") {
+    return "navigation and vision assistance";
   }
   if (activity === "both") {
-    return "continuous vision and reading";
+    return "navigation and vision assistance and reading";
   }
   return activity;
 }

@@ -708,22 +708,9 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     [services],
   );
 
-  const startVision = useCallback(async (opts?: { skipNavigate?: boolean }) => {
-    if (!capabilities?.available.camera) {
-      emit({
-        type: "feature-unavailable",
-        feature: "camera",
-        reason: "Vision assistance is unavailable. No camera was found on this device.",
-      });
-      return;
-    }
-
-    await enterMode("assist");
-    if (!opts?.skipNavigate) {
-      navigate("/vision");
-    }
+  const ensureAssistPerception = useCallback(async (): Promise<boolean> => {
     if (!prefs) {
-      return;
+      return false;
     }
     const requestOptions = cameraRequestWithPrefs("assist", deviceProfile, prefs);
     const cameraAlreadyLive = services.camera.getStatus() === "live";
@@ -731,8 +718,8 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
       requestOptions.facingMode === "user" ? "front camera" : "rear camera";
     services.speech.announceSystem(
       cameraAlreadyLive
-        ? "Continuous vision is on. Using the live camera."
-        : `Continuous vision is on. Requesting the ${facingLabel}.`,
+        ? "Navigation and vision assistance is starting. Using the live camera."
+        : `Navigation and vision assistance is starting. Requesting the ${facingLabel}.`,
       !cameraAlreadyLive,
     );
     try {
@@ -744,40 +731,40 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
           deviceId: requestOptions.deviceId,
         });
       }
-      if (services.camera.getStatus() === "live") {
-        services.echo.stop();
-        const captureReady = await services.camera.waitUntilCaptureReady();
-        if (!captureReady) {
-          services.speech.announceSystem(
-            "The camera is live but video is not ready yet. Wait a moment and start vision again.",
-            true,
-          );
-          return;
-        }
-        const backend =
-          deviceProfile.ios || capabilities?.inferenceBackend !== "webgpu"
-            ? "wasm"
-            : "webgpu";
-        try {
-          await services.perception.start(services.camera, backend, {
-            profile: prefs?.performanceProfile ?? "balanced",
-            backgroundWarnings: prefs?.backgroundWarnings ?? false,
-            isSpeakingSafety: () => services.speech.isSpeakingSafety(),
-            deviceClass: deviceProfile.class,
-          });
-          const using = services.perception.getLastResult()?.backend ?? backend;
-          const profileNote =
-            prefs?.performanceProfile === "power-save"
-              ? ", power-save profile"
-              : "";
-          services.speech.announceSystem(
-            `Camera is live. Continuous object detection is on, using ${using}${profileNote}.`,
-            false,
-          );
-        } catch {
-          /* feature-unavailable is announced by SpeechManager */
-        }
+      if (services.camera.getStatus() !== "live") {
+        return false;
       }
+      services.echo.stop();
+      const captureReady = await services.camera.waitUntilCaptureReady();
+      if (!captureReady) {
+        services.speech.announceSystem(
+          "The camera is live but video is not ready yet. Wait a moment and try again.",
+          true,
+        );
+        return false;
+      }
+      const backend =
+        deviceProfile.ios || capabilities?.inferenceBackend !== "webgpu"
+          ? "wasm"
+          : "webgpu";
+      try {
+        await services.perception.start(services.camera, backend, {
+          profile: prefs.performanceProfile ?? "balanced",
+          backgroundWarnings: prefs.backgroundWarnings ?? false,
+          isSpeakingSafety: () => services.speech.isSpeakingSafety(),
+          deviceClass: deviceProfile.class,
+        });
+        const using = services.perception.getLastResult()?.backend ?? backend;
+        const profileNote =
+          prefs.performanceProfile === "power-save" ? ", power-save profile" : "";
+        services.speech.announceSystem(
+          `Camera is live. Object detection is analyzing the scene, using ${using}${profileNote}.`,
+          false,
+        );
+      } catch {
+        /* feature-unavailable is announced by SpeechManager */
+      }
+      return visionIsReadyForNavigation(services.perception.getStatus());
     } catch {
       const cameraError = services.camera.getLastError();
       if (cameraError) {
@@ -786,8 +773,9 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
           true,
         );
       }
+      return false;
     }
-  }, [capabilities, deviceProfile, emit, enterMode, navigate, prefs, services]);
+  }, [capabilities, deviceProfile, prefs, services]);
 
   const startReading = useCallback(async () => {
     if (!prefs?.ocrEnabled) {
@@ -913,31 +901,37 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
     }
 
     if (services.navigation.isActive()) {
-      services.speech.announceSystem("Path assistance is already on.", false);
+      services.speech.announceSystem(
+        "Navigation and vision assistance is already on.",
+        false,
+      );
+      navigate("/navigate");
       return;
     }
 
     await enterMode("assist");
     navigate("/navigate");
 
-    const visionOn = !navigationNeedsVisionStart(services.perception.getStatus());
-    if (!visionOn) {
-      await startVision({ skipNavigate: true });
-    }
-
-    if (!visionIsReadyForNavigation(services.perception.getStatus())) {
-      emit({
-        type: "feature-unavailable",
-        feature: "navigation",
-        reason: PATH_ASSISTANCE_NEEDS_VISION,
-      });
-      return;
+    if (navigationNeedsVisionStart(services.perception.getStatus())) {
+      const ready = await ensureAssistPerception();
+      if (!ready) {
+        emit({
+          type: "feature-unavailable",
+          feature: "navigation",
+          reason: PATH_ASSISTANCE_NEEDS_VISION,
+        });
+        return;
+      }
     }
 
     services.navigation.start();
     services.speech.setPathAssistanceActive(true);
     services.speech.announceSystem(PATH_ASSISTANCE_START_SPEECH, false);
-  }, [capabilities, emit, enterMode, navigate, services, startVision]);
+  }, [capabilities, emit, enterMode, ensureAssistPerception, navigate, services]);
+
+  const startVision = useCallback(async () => {
+    await startNavigation();
+  }, [startNavigation]);
 
   const testSignSpeechOutput = useCallback(() => {
     services.speech.testSignSpeechOutput();
@@ -952,15 +946,33 @@ export function MaraRuntimeProvider({ children }: { children: ReactNode }) {
   );
 
   const stopNavigation = useCallback(async () => {
-    if (!services.navigation.isActive()) {
-      services.speech.announceSystem("Path assistance is not running.", false);
+    const navActive = services.navigation.isActive();
+    const perceptionActive =
+      services.perception.getStatus() === "live" ||
+      services.perception.getStatus() === "loading" ||
+      services.perception.getStatus() === "paused";
+    if (!navActive && !perceptionActive) {
+      services.speech.announceSystem(
+        "Navigation and vision assistance is not running.",
+        false,
+      );
       return;
     }
     services.speech.setPathAssistanceActive(false);
     services.speech.cancel("nav");
+    services.speech.resetScene();
     services.navigation.stop();
     setPathObstacles([]);
     setPathInstruction("");
+    await services.perception.stop();
+    const readingActive =
+      services.ocr.getStatus() === "live" ||
+      services.ocr.getStatus() === "loading" ||
+      services.ocr.getStatus() === "paused";
+    if (!readingActive && services.camera.getStatus() === "live") {
+      await services.camera.stop();
+      await services.controller.exitToIdle();
+    }
     services.speech.announceSystem(PATH_ASSISTANCE_STOP_SPEECH, false);
   }, [services]);
 

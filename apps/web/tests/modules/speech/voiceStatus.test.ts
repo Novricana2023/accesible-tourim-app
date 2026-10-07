@@ -10,7 +10,9 @@ describe("voiceLiveStatus", () => {
         activity: "both",
         lastHeardCommand: "start-reading",
       }),
-    ).toBe("Listening. Current mode: continuous vision and reading. Heard start reading.");
+    ).toBe(
+      "Listening. Current mode: navigation and vision assistance and reading. Heard start reading.",
+    );
   });
 
   it("reports denied permission honestly", () => {

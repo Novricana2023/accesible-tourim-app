@@ -35,19 +35,19 @@ export interface PathAssistanceState extends NavigationState {
 }
 
 export const PATH_ASSISTANCE_DISCLAIMER =
-  `Path assistance uses the camera and object detection. It is not collision avoidance and does not measure distance in meters. ${APP_NAME} will not say the path is safe.`;
+  `Navigation and vision assistance uses the camera and object detection. It is not collision avoidance and does not measure distance in meters. ${APP_NAME} will not say the path is safe.`;
 
 export const PATH_ASSISTANCE_START_SPEECH =
-  `Path assistance is on. This is not collision avoidance. ${APP_NAME} will not say the path is safe.`;
+  `Navigation and vision assistance is on. This is not collision avoidance. ${APP_NAME} will not say the path is safe.`;
 
 export const PATH_ASSISTANCE_STOP_SPEECH =
-  "Path assistance is off. Continuous vision is still on.";
+  "Navigation and vision assistance is off.";
 
 export const PATH_ASSISTANCE_NEEDS_VISION =
-  "Path assistance needs continuous vision. Allow the rear camera, wait until video dimensions are ready, and ensure object-detection models deployed (build:production).";
+  "Navigation needs the camera and object detection. Allow the rear camera, wait until video is ready, and ensure detection models are deployed (build:production).";
 
 export const PATH_ASSISTANCE_NEEDS_CAMERA =
-  "Path assistance is unavailable. No camera was found on this device.";
+  "Navigation and vision assistance is unavailable. No camera was found on this device.";
 
 export function emptyPathState(): PathAssistanceState {
   return {

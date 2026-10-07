@@ -71,7 +71,9 @@ export function readAvailability(input: {
 
 export function navigateAvailability(input: {
   capabilities: CapabilityReport | null;
+  mode: string;
   navigationStatus: NavigationStatus;
+  perceptionStatus: PerceptionStatus;
 }): FeatureAvailability {
   if (!input.capabilities) {
     return { status: "checking", reason: "Checking this device." };
@@ -79,7 +81,13 @@ export function navigateAvailability(input: {
   if (!input.capabilities.available.camera) {
     return { status: "unavailable", reason: "No camera was found on this device." };
   }
-  if (input.navigationStatus === "live") {
+  const running =
+    input.navigationStatus === "live" ||
+    (input.mode === "assist" &&
+      (input.perceptionStatus === "live" ||
+        input.perceptionStatus === "loading" ||
+        input.perceptionStatus === "paused"));
+  if (running) {
     return { status: "active", reason: null };
   }
   return { status: "ready", reason: null };

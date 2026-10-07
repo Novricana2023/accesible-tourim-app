@@ -27,7 +27,7 @@ describe("applyAssistCommand", () => {
     applyAssistCommand(command("stop-reading"), actions);
     applyAssistCommand(command("stop"), actions);
 
-    expect(calls).toEqual(["startVision", "startReading", "stopReading", "stop"]);
+    expect(calls).toEqual(["startNavigation", "startReading", "stopReading", "stop"]);
   });
 
   it("maps start and stop navigation to the path-assistance actions", () => {
@@ -59,7 +59,7 @@ describe("applyAssistCommand", () => {
       "idle",
     );
     expect(assistActivity({ mode: "assist", visionRunning: true, readingRunning: false })).toBe(
-      "continuous vision",
+      "navigation and vision",
     );
     expect(assistActivity({ mode: "assist", visionRunning: false, readingRunning: true })).toBe(
       "reading",

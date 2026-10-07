@@ -32,7 +32,7 @@ describe("path speech", () => {
         depthSource: "bbox-area",
       }),
     );
-    expect(text).toBe("Person, center, near.");
+    expect(text).toBe("Person ahead.");
     expect(utteranceContainsMeters(text)).toBe(false);
     expect(text).not.toMatch(/\d/);
     expect(text.toLowerCase()).not.toContain("meter");
@@ -54,7 +54,7 @@ describe("path speech", () => {
     const again = policy.requestsFromObstacles([obstacle()], 400);
     expect(first).toHaveLength(1);
     expect(first[0]?.category).toBe("nav");
-    expect(first[0]?.text).toBe("Person, center, near.");
+    expect(first[0]?.text).toBe("Person ahead.");
     expect(again).toHaveLength(0);
   });
 
@@ -76,6 +76,6 @@ describe("path speech", () => {
     );
     expect(spoken).toHaveLength(1);
     expect(utteranceContainsMeters(spoken[0]?.text ?? "")).toBe(false);
-    expect(spoken[0]?.text).toBe("Person, center, near.");
+    expect(spoken[0]?.text).toBe("Person ahead.");
   });
 });

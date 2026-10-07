@@ -97,7 +97,7 @@ describe("NavigationRuntime", () => {
     );
 
     expect(obstacles.map((item) => item.label)).toEqual(["person"]);
-    expect(spoken).toEqual(["Person approaching, center, near."]);
+    expect(spoken).toEqual(["Person approaching ahead."]);
     expect(spoken[0]?.toLowerCase()).not.toContain("meter");
     expect(nav.getState().distanceMetersToStep).toBeNull();
     expect(nav.getState().kind).toBe("path-assistance");
